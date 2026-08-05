@@ -235,6 +235,11 @@ error taxonomy is the riskiest.
 > ID. This prevents one multiply-connected block
 > from producing several rows that all point to the same destination.
 
+> **Connection-presentation update (2026-08-05, implementation):** The side
+> panel still keeps one row per matching block ID, but leads each row with its
+> originating channel rather than the repeated block title. The heading sums
+> each block's complete connection total across all matching instances.
+
 > **Build update (2026-08-05, implementation):** Vite's optional module-preload
 > generation is disabled because Chrome rejects extension-page preload hints as
 > cross-world resources. Native module imports preserve code splitting without

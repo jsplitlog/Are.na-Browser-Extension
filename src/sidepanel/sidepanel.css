@@ -216,7 +216,7 @@ button { font: inherit; }
 .block-copy:hover,
 .block-copy:active { background: var(--arena-soft); }
 
-.block-title {
+.channel-title {
   color: var(--arena-black);
   display: block;
   font-size: 0.875rem;

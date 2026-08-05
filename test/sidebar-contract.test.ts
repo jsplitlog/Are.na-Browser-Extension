@@ -37,5 +37,7 @@ describe('side panel release contract', () => {
     expect(sidepanelSource).not.toContain('copy-sort-menu');
     expect(sidepanelSource).not.toContain('siteHeader');
     expect(sidepanelSource).not.toMatch(/copy'\s*:\s*'copies/);
+    expect(sidepanelSource).toContain("'channel-title'");
+    expect(sidepanelSource).toContain("'Loading connections…'");
   });
 });

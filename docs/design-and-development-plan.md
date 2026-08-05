@@ -681,9 +681,10 @@ opens a block over a specific channel, so the canonical block URL is the
 reliable way to reveal that copy and its complete connection graph. Every row
 is built with `createElement` + `textContent` (§6).
 
-The popup uses a fixed 360px white canvas and a deliberately narrow type
-hierarchy to stay close to Are.na's own utility UI. The header counts discrete
-copies, not a flattened or partial channel total.
+The side panel uses a fluid white canvas and a deliberately narrow type
+hierarchy to stay close to Are.na's own utility UI. Its header sums each
+matching block's complete connection total; rows remain one-per-block and lead
+with the originating channel name.
 
 The styling adaptation is sourced from the official `aredotna/ervell` frontend
 at commit `2fcb6d2b85b4d6fbe6cd1a36641aac2d91955c47`: `src/v2/styles/{colors,text,
@@ -704,9 +705,9 @@ used. The sort control sits as a full-bleed row below the result count and URL,
 before the list begins.
 
 Because the whole lookup now happens *while the user watches*, loading states
-matter more than they would have ambiently. Render the phase-1 count
-("4 blocks found") the moment it arrives, then fill channels in beneath it as
-phase 2 resolves — don't hold a blank panel for both round trips.
+matter more than they would have ambiently. Render a short connection-loading
+label until every per-block total is known, then replace it with their exact
+sum. Channel names fill the list as phase 2 resolves.
 
 No on/off toggle or skip-list here: with manual lookup there is nothing running
 to switch off. Both arrive with phase 2 (§6).

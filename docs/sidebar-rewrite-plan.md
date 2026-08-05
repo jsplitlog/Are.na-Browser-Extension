@@ -23,10 +23,14 @@ manual, privacy-cheap lookup model.
 - Use the block creation date without the word “Created.”
 - Separate metadata with layout spacing, never bullet characters.
 - Describe totals as “connection” or “connections,” never “channel(s).”
+- Lead each master row with the originating channel title. Reserve the repeated
+  block title for the detail view.
 - Display only the originating channel: the oldest block connection, requested
   with `sort=created_at_asc&per=1`.
 - Preserve `meta.total_count` as the complete connection total even though only
   one channel is rendered.
+- Sum those complete per-block totals in the page heading so it describes all
+  connections across every matching block instance.
 
 ## Chrome architecture
 
@@ -52,7 +56,7 @@ manual, privacy-cheap lookup model.
 - Treat search and connection data as untrusted and render it only through DOM
   creation and `textContent`.
 - Suppress stale async responses when a newer toolbar request arrives.
-- Support pointer and keyboard navigation throughout the sort menu and
+- Support pointer and keyboard navigation throughout the sort controls and
   master/detail transition.
 
 ## Visual language
@@ -82,11 +86,14 @@ manual, privacy-cheap lookup model.
    language.
 6. **Align the native panel hierarchy** — remove the redundant product header
    and replace the sort menu with direct reversible controls.
+7. **Lead with connection context** — promote original channel names, load them
+   for every result, and sum their complete connection totals in the heading.
 
 ## Acceptance criteria
 
 - The toolbar opens the extension in Chrome's side panel.
-- A 40-block result scrolls naturally without a popup-height ceiling.
+- A result with 40 matching blocks scrolls naturally without a popup-height
+  ceiling while its heading reports the summed connection total.
 - Selecting a block opens an in-panel detail view; Back restores the master view
   and scroll position.
 - Each block shows creator, plain date, total connections, and at most one

@@ -1,7 +1,7 @@
 import './sidepanel.css';
 import { ACTIVE_PAGE_KEY, isActivePageRequest } from '../core/active-page';
 import { formatBlockCreatedDate } from '../core/block-date';
-import { nextCopySort, sortBlocks, type CopySort } from '../core/copy-sort';
+import { nextCopySort, sortBlocks, totalConnectionCount, type CopySort } from '../core/copy-sort';
 import type { Request, Response } from '../core/messages';
 import type { ArenaBlock, ArenaChannel, LookupResult } from '../core/types';
 
@@ -142,6 +142,11 @@ const originatingChannel = (channels?: ArenaChannel[]): HTMLElement | null => {
   return label;
 };
 
+const originatingChannelTitle = (channels?: ArenaChannel[]): string => {
+  if (channels === undefined) return 'Loading channel…';
+  return channels[0]?.title || 'Channel unavailable';
+};
+
 const sortControl = (selected: CopySort, onChange: (sort: CopySort) => void): HTMLDivElement => {
   const control = element('div', 'copy-sort');
   control.setAttribute('role', 'group');
@@ -187,10 +192,14 @@ const sortControl = (selected: CopySort, onChange: (sort: CopySort) => void): HT
 
 const resultContext = (result: LookupResult): HTMLElement => {
   const context = element('section', 'result-context');
-  const count = result.blocks.length;
+  const count = totalConnectionCount(result.blocks);
   const heading = element('div', 'result-heading');
   heading.append(
-    element('h1', 'result-title', `${count} ${count === 1 ? 'block' : 'blocks'}`),
+    element(
+      'h1',
+      'result-title',
+      count === null ? 'Loading connections…' : `${count} ${count === 1 ? 'connection' : 'connections'}`,
+    ),
     settingsButton(),
   );
   context.append(
@@ -223,9 +232,7 @@ const renderMaster = (restoreScroll = false): void => {
     const item = element('li', 'block-list-item');
     const copy = element('button', 'block-copy');
     copy.type = 'button';
-    copy.append(element('span', 'block-title', block.title || 'Untitled block'), metadata(block));
-    const origin = originatingChannel(channels);
-    if (origin) copy.append(origin);
+    copy.append(element('span', 'channel-title', originatingChannelTitle(channels)), metadata(block));
     copy.addEventListener('click', () => {
       masterScrollPosition = window.scrollY;
       currentView = { kind: 'detail', blockId: block.id };

@@ -1,6 +1,6 @@
 import { getAuthState, signInWithOAuth, signOut } from '../core/auth';
 import { ACTIVE_PAGE_KEY, type ActivePageRequest } from '../core/active-page';
-import { createRequestBudget, type RequestBudget } from '../core/arena';
+import { createRequestBudget } from '../core/arena';
 import { getCached } from '../core/cache';
 import type { Request, Response } from '../core/messages';
 import { blocksFor, connectionsFor } from '../core/resolve';
@@ -8,7 +8,6 @@ import type { LookupResult } from '../core/types';
 
 const lookups = new Map<string, Promise<LookupResult>>();
 const connections = new Map<string, Promise<LookupResult>>();
-const budgets = new Map<string, RequestBudget>();
 
 const errorResult = (normalizedUrl: string): LookupResult => ({
   normalizedUrl,
@@ -21,10 +20,7 @@ const lookup = async (url: string): Promise<LookupResult> => {
   const existing = lookups.get(url);
   if (existing) return existing;
   const budget = createRequestBudget(10);
-  const pending = blocksFor(url, budget).then((result) => {
-    if (result.status === 'hit') budgets.set(result.normalizedUrl, budget);
-    return result;
-  }).finally(() => lookups.delete(url));
+  const pending = blocksFor(url, budget).finally(() => lookups.delete(url));
   lookups.set(url, pending);
   return pending;
 };
@@ -35,10 +31,9 @@ const loadConnections = async (normalizedUrl: string): Promise<LookupResult> => 
   const pending = (async () => {
     const cached = await getCached(normalizedUrl);
     if (!cached) return errorResult(normalizedUrl);
-    return connectionsFor(cached, budgets.get(normalizedUrl) ?? createRequestBudget(8));
+    return connectionsFor(cached);
   })().finally(() => {
     connections.delete(normalizedUrl);
-    budgets.delete(normalizedUrl);
   });
   connections.set(normalizedUrl, pending);
   return pending;
