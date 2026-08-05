@@ -1,0 +1,33 @@
+import type { ArenaBlock, ArenaChannel } from './types';
+
+export type CopySort = 'most-connections' | 'least-connections' | 'newest' | 'oldest';
+
+const connectionCount = (block: ArenaBlock, connections: Record<number, ArenaChannel[]>): number | null =>
+  block.connectionCount ?? connections[block.id]?.length ?? null;
+
+const createdTime = (block: ArenaBlock): number | null => {
+  if (!block.createdAt) return null;
+  const value = Date.parse(block.createdAt);
+  return Number.isFinite(value) ? value : null;
+};
+
+export const sortBlocks = (
+  blocks: ArenaBlock[],
+  connections: Record<number, ArenaChannel[]>,
+  sort: CopySort,
+): ArenaBlock[] => [...blocks].sort((a, b) => {
+  if (sort === 'most-connections' || sort === 'least-connections') {
+    const aCount = connectionCount(a, connections);
+    const bCount = connectionCount(b, connections);
+    if (aCount === null && bCount === null) return 0;
+    if (aCount === null) return 1;
+    if (bCount === null) return -1;
+    return sort === 'most-connections' ? bCount - aCount : aCount - bCount;
+  }
+  const aTime = createdTime(a);
+  const bTime = createdTime(b);
+  if (aTime === null && bTime === null) return 0;
+  if (aTime === null) return 1;
+  if (bTime === null) return -1;
+  return sort === 'newest' ? bTime - aTime : aTime - bTime;
+});

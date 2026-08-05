@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Are.na Connections settings</title>
+    <link rel="stylesheet" href="./options.css">
+  </head>
+  <body>
+    <main class="settings" aria-labelledby="page-title">
+      <header><p class="eyebrow">Are.na Connections</p><h1 id="page-title">Settings</h1><p>Look up public Are.na connections only when you ask.</p></header>
+      <section aria-labelledby="account-title">
+        <h2 id="account-title">Account</h2>
+        <p id="account-status" role="status">Not signed in.</p>
+        <form id="pat-form">
+          <label for="token">Personal access token</label>
+          <input id="token" name="token" type="password" autocomplete="off" spellcheck="false" required>
+          <p class="hint">Create a read token in <a href="https://www.are.na/settings/personal-access-tokens" target="_blank" rel="noopener">Are.na settings</a>.</p>
+          <label class="remember"><input id="remember" type="checkbox"> Remember on this device</label>
+          <div class="actions"><button type="submit">Sign in with token</button><button id="sign-out" type="button" hidden>Sign out</button></div>
+        </form>
+        <p id="form-message" role="alert" aria-live="polite"></p>
+      </section>
+      <section aria-labelledby="oauth-title">
+        <h2 id="oauth-title">OAuth</h2>
+        <p id="oauth-copy">OAuth sign-in needs an Are.na application registered to this extension’s exact Chrome redirect URL. It is not configured in this build.</p>
+        <button id="oauth-sign-in" type="button" disabled>Sign in with Are.na</button>
+      </section>
+      <section aria-labelledby="privacy-title">
+        <h2 id="privacy-title">Privacy</h2>
+        <p>Nothing is sent until you click a lookup. Are.na receives search terms derived from the page URL and associates that lookup with your account. Full URLs, query strings, fragments, browsing history, analytics, and telemetry are never sent.</p>
+      </section>
+      <section aria-labelledby="security-title">
+        <h2 id="security-title">Token safety</h2>
+        <p>Tokens do not expire. By default, this extension keeps yours only for this browser session; checking “Remember” stores it on this device. Signing out removes it from the extension, but cannot revoke it at Are.na. To fully revoke access, delete the token in Are.na settings.</p>
+      </section>
+      <footer>Unofficial, read-only companion for <a href="https://www.are.na" target="_blank" rel="noopener">Are.na</a>.</footer>
+    </main>
+    <script type="module" src="./options.ts"></script>
+  </body>
+</html>

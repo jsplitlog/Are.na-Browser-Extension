@@ -1,0 +1,19 @@
+{
+  "name": "arena-connections-extension",
+  "private": true,
+  "version": "0.1.1",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit && vite build",
+    "dev": "vite build --watch",
+    "test": "vitest run --root .",
+    "test:watch": "vitest --root ."
+  },
+  "devDependencies": {
+    "@types/chrome": "latest",
+    "@types/node": "latest",
+    "typescript": "latest",
+    "vite": "latest",
+    "vitest": "latest"
+  }
+}
