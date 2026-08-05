@@ -198,9 +198,14 @@ export const searchBlocks = async (url: string, budget?: RequestBudget): Promise
   return [...found.values()];
 };
 
-/** Connection ordering deliberately remains the order returned by Are.na. */
+/** Fetches the channel where the block was first connected. */
 export const getBlockConnections = async (id: number, budget?: RequestBudget): Promise<{ channels: ArenaChannel[]; total: number }> => {
-  const body = asRecord(await request(`/blocks/${encodeURIComponent(String(id))}/connections`, { per: '10' }, false, budget));
+  const body = asRecord(await request(
+    `/blocks/${encodeURIComponent(String(id))}/connections`,
+    { per: '1', sort: 'created_at_asc' },
+    false,
+    budget,
+  ));
   const data = body && Array.isArray(body.data) ? body.data : [];
   const meta = body ? asRecord(body.meta) : null;
   const channels = data.map(parseChannel).filter((channel): channel is ArenaChannel => channel !== null);
