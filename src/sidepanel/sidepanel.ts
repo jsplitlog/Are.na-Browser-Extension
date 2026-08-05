@@ -127,8 +127,8 @@ const metadata = (block: ArenaBlock, channelTitle: string): HTMLElement => {
   if (date) details.append(element('span', 'metadata-item metadata-muted', date));
   const count = connectionCount(block);
   if (count) details.append(element('span', 'metadata-item metadata-muted', count));
-  row.append(creatorAvatar(block), content);
   row.append(element('span', 'channel-title', channelTitle));
+  row.append(creatorAvatar(block), content);
   if (details.childElementCount) row.append(details);
   return row;
 };

@@ -25,9 +25,9 @@ in a new tab, preserving the extension's manual, privacy-cheap lookup model.
   span the full row so the date aligns flush with the avatar and the connection
   count aligns right.
 - Describe totals as “connection” or “connections,” never “channel(s).”
-- Lead each master row with the creator avatar and name, then show the
-  originating channel at metadata size with bold weight. Do not repeat the
-  block title.
+- Lead each master row with the originating channel at metadata size with bold
+  weight, followed by the creator avatar and name. Do not repeat the block
+  title.
 - Display only the originating channel: the oldest block connection, requested
   with `sort=created_at_asc&per=1`.
 - Preserve `meta.total_count` as the complete connection total even though only
