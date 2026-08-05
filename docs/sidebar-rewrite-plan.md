@@ -54,6 +54,20 @@ manual, privacy-cheap lookup model.
 - Support pointer and keyboard navigation throughout the sort menu and
   master/detail transition.
 
+## Visual language
+
+- Follow Are.na's frontend tokens from `aredotna/ervell` at
+  `2fcb6d2b85b4d6fbe6cd1a36641aac2d91955c47`: Arial, white surfaces, compact
+  spacing, `#333` headings, `#585858` body text, `#999` metadata, `#eee`
+  dividers, and `#00bbf7` focus rings.
+- Keep controls flat, native-looking, and bounded by one-pixel gray borders.
+  Avoid translucent surfaces, backdrop blur, elevated shadows, and decorative
+  motion.
+- Use clipped state language modeled on Are.na's own empty states: direct labels
+  such as “Nothing found.” with supporting copy only when it helps the user act.
+- Keep hierarchy typographic and structural. Use compact rules and spacing
+  instead of cards or ornamental containers.
+
 ## Commit sequence
 
 1. **Load originating block connections** — tighten the API contract and tests.

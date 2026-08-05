@@ -76,10 +76,7 @@ const renderState = (
 };
 
 const renderIdle = (): void => {
-  renderState(
-    'Ready when you are',
-    'Click the Are.na Connections button in the Chrome toolbar to look up the page you’re viewing.',
-  );
+  renderState('No page selected.', 'Click the toolbar button to check this page.');
 };
 
 const signInAction = (): HTMLButtonElement => {
@@ -92,19 +89,19 @@ const signInAction = (): HTMLButtonElement => {
 const renderLookupStatus = (result: LookupResult): void => {
   switch (result.status) {
     case 'unauthenticated':
-      renderState('Sign in to Are.na to see connections', undefined, signInAction());
+      renderState('Sign in required.', undefined, signInAction());
       break;
     case 'not_premium':
-      renderState('Are.na search requires a Premium account', 'Your account is signed in, but URL search is a Premium feature.');
+      renderState('Premium required.', 'Are.na search requires Premium.');
       break;
     case 'skipped':
-      renderState('This page can’t be looked up', 'There aren’t enough descriptive words in this address to search reliably.');
+      renderState('Can’t look up this page.');
       break;
     case 'miss':
-      renderState('No public connections found', 'Search can miss pages whose address has little descriptive text.');
+      renderState('Nothing found.');
       break;
     default:
-      renderState('Couldn’t reach Are.na', 'Check your connection, then click the toolbar button to try again.');
+      renderState('Couldn’t reach Are.na.');
   }
 };
 
@@ -147,7 +144,7 @@ const originatingChannel = (channels?: ArenaChannel[]): HTMLElement | null => {
   const channel = channels?.[0];
   if (!channel) return null;
   const label = element('span', 'originating-channel');
-  label.append(element('span', 'originating-label', 'From'));
+  label.append(element('span', 'originating-label', 'Original channel'));
   label.append(element('span', 'originating-title', channel.title || 'Untitled channel'));
   return label;
 };
@@ -247,7 +244,7 @@ const resultContext = (result: LookupResult): HTMLElement => {
   const context = element('section', 'result-context');
   const count = result.blocks.length;
   context.append(
-    element('h1', 'result-title', `${count} ${count === 1 ? 'copy' : 'copies'} on Are.na`),
+    element('h1', 'result-title', `${count} ${count === 1 ? 'copy' : 'copies'}`),
     element('p', 'result-url', visibleUrl(result.normalizedUrl)),
   );
   return context;
@@ -263,7 +260,7 @@ const renderMaster = (restoreScroll = false): void => {
   const header = siteHeader();
   const context = resultContext(result);
   const toolbar = element('div', 'master-toolbar');
-  toolbar.append(sortControl(currentSort, (nextSort) => {
+  toolbar.append(element('span', 'toolbar-label', 'Sort'), sortControl(currentSort, (nextSort) => {
     currentSort = nextSort;
     masterScrollPosition = 0;
     renderMaster();
@@ -308,7 +305,7 @@ const renderDetail = (block: ArenaBlock, focusBack = true): void => {
   const channels = currentConnections[block.id];
   const page = element('div', 'detail-view');
   const navigation = element('header', 'detail-navigation');
-  const back = element('button', 'back-button', 'Back');
+  const back = element('button', 'back-button', 'All copies');
   back.type = 'button';
   back.setAttribute('aria-label', 'Back to copies');
   back.addEventListener('click', () => {
@@ -325,7 +322,7 @@ const renderDetail = (block: ArenaBlock, focusBack = true): void => {
   const origin = originatingChannel(channels);
   if (origin) body.append(origin);
 
-  const open = element('a', 'arena-link', 'Open on Are.na');
+  const open = element('a', 'arena-link', 'Open block');
   open.href = `https://www.are.na/block/${encodeURIComponent(String(block.id))}`;
   open.target = '_blank';
   open.rel = 'noopener';
@@ -360,7 +357,7 @@ const startLookup = async (url: string): Promise<void> => {
   currentConnections = {};
   currentView = { kind: 'master' };
   masterScrollPosition = 0;
-  renderState('Looking for connections…', 'Only this page is sent as search words when you ask.', undefined, true);
+  renderState('Looking up page…', undefined, undefined, true);
 
   try {
     const phaseOne = await send({ kind: 'lookup', url });
@@ -389,7 +386,7 @@ const startLookup = async (url: string): Promise<void> => {
     renderCurrentView(currentView.kind === 'master');
   } catch {
     if (generation === requestGeneration) {
-      renderState('Couldn’t reach Are.na', 'Check your connection, then click the toolbar button to try again.');
+      renderState('Couldn’t reach Are.na.');
     }
   }
 };
