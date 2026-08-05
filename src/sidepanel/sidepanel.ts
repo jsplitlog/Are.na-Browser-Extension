@@ -1,7 +1,7 @@
 import './sidepanel.css';
 import { ACTIVE_PAGE_KEY, isActivePageRequest } from '../core/active-page';
 import { formatBlockCreatedDate } from '../core/block-date';
-import { sortBlocks, type CopySort } from '../core/copy-sort';
+import { nextCopySort, sortBlocks, type CopySort } from '../core/copy-sort';
 import type { Request, Response } from '../core/messages';
 import type { ArenaBlock, ArenaChannel, LookupResult } from '../core/types';
 
@@ -48,14 +48,6 @@ const settingsButton = (): HTMLButtonElement => {
   return button;
 };
 
-const siteHeader = (): HTMLElement => {
-  const header = element('header', 'site-header');
-  const brand = element('div', 'brand');
-  brand.append(element('span', 'brand-mark', 'Are.na'), element('span', 'brand-label', 'Connections'));
-  header.append(brand, settingsButton());
-  return header;
-};
-
 const replaceApp = (...nodes: Node[]): void => {
   app?.replaceChildren(...nodes);
 };
@@ -72,7 +64,8 @@ const renderState = (
   state.append(element('h1', 'state-title', title));
   if (detail) state.append(element('p', 'state-detail', detail));
   if (action) state.append(action);
-  replaceApp(siteHeader(), state);
+  if (!action) state.append(settingsButton());
+  replaceApp(state);
 };
 
 const renderIdle = (): void => {
@@ -150,101 +143,58 @@ const originatingChannel = (channels?: ArenaChannel[]): HTMLElement | null => {
 };
 
 const sortControl = (selected: CopySort, onChange: (sort: CopySort) => void): HTMLDivElement => {
-  const choices: Array<[CopySort, string]> = [
-    ['most-connections', 'Most connections'],
-    ['least-connections', 'Least connections'],
-    ['newest', 'Newest'],
-    ['oldest', 'Oldest'],
-  ];
-  const selectedIndex = Math.max(0, choices.findIndex(([value]) => value === selected));
   const control = element('div', 'copy-sort');
-  const trigger = element('button', 'copy-sort-trigger', choices[selectedIndex]?.[1] ?? 'Sort copies');
-  trigger.type = 'button';
-  trigger.setAttribute('aria-haspopup', 'menu');
-  trigger.setAttribute('aria-expanded', 'false');
-  trigger.setAttribute('aria-label', `Sort copies: ${choices[selectedIndex]?.[1] ?? 'Sort copies'}`);
+  control.setAttribute('role', 'group');
+  control.setAttribute('aria-label', 'Sort blocks');
 
-  const menu = element('div', 'copy-sort-menu');
-  menu.hidden = true;
-  menu.setAttribute('role', 'menu');
-  menu.setAttribute('aria-label', 'Sort copies');
-  const options: HTMLButtonElement[] = [];
-
-  const close = (restoreFocus = false): void => {
-    menu.hidden = true;
-    trigger.setAttribute('aria-expanded', 'false');
-    document.removeEventListener('pointerdown', handleOutsidePress);
-    if (restoreFocus) trigger.focus();
-  };
-
-  const open = (focusIndex = selectedIndex): void => {
-    menu.hidden = false;
-    trigger.setAttribute('aria-expanded', 'true');
-    document.addEventListener('pointerdown', handleOutsidePress);
-    options[focusIndex]?.focus();
-  };
-
-  function handleOutsidePress(event: PointerEvent): void {
-    if (!control.contains(event.target as Node)) close();
-  }
-
-  for (const [value, label] of choices) {
-    const option = element('button', 'copy-sort-option', label);
-    option.type = 'button';
-    option.setAttribute('role', 'menuitemradio');
-    option.setAttribute('aria-checked', String(value === selected));
-    option.addEventListener('click', () => {
-      close();
-      if (value === selected) {
-        trigger.focus();
-        return;
-      }
-      onChange(value);
-    });
-    options.push(option);
-    menu.append(option);
-  }
-
-  trigger.addEventListener('click', () => {
-    if (menu.hidden) open();
-    else close(true);
-  });
-  trigger.addEventListener('keydown', (event) => {
-    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
-    event.preventDefault();
-    open(event.key === 'ArrowDown' ? selectedIndex : choices.length - 1);
-  });
-  menu.addEventListener('keydown', (event) => {
-    const currentIndex = options.indexOf(document.activeElement as HTMLButtonElement);
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      close(true);
-      return;
-    }
-    if (event.key === 'Tab') {
-      close();
-      return;
-    }
-    let nextIndex: number | null = null;
-    if (event.key === 'ArrowDown') nextIndex = (currentIndex + 1) % options.length;
-    if (event.key === 'ArrowUp') nextIndex = (currentIndex - 1 + options.length) % options.length;
-    if (event.key === 'Home') nextIndex = 0;
-    if (event.key === 'End') nextIndex = options.length - 1;
-    if (nextIndex !== null) {
-      event.preventDefault();
-      options[nextIndex]?.focus();
-    }
+  const connectionsActive = selected === 'most-connections' || selected === 'least-connections';
+  const connectionsDirection = selected === 'least-connections' ? 'ascending' : 'descending';
+  const connections = element(
+    'button',
+    `sort-button sort-${connectionsDirection}`,
+    'Connections',
+  );
+  connections.type = 'button';
+  connections.setAttribute('aria-pressed', String(connectionsActive));
+  connections.setAttribute(
+    'aria-label',
+    connectionsActive
+      ? `Connections, ${connectionsDirection === 'descending' ? 'most' : 'least'} first. Reverse order.`
+      : 'Sort by connections, most first.',
+  );
+  connections.addEventListener('click', () => {
+    onChange(nextCopySort(selected, 'connections'));
   });
 
-  control.append(trigger, menu);
+  const dateActive = selected === 'newest' || selected === 'oldest';
+  const dateDirection = selected === 'oldest' ? 'ascending' : 'descending';
+  const date = element('button', `sort-button sort-${dateDirection}`, 'Date');
+  date.type = 'button';
+  date.setAttribute('aria-pressed', String(dateActive));
+  date.setAttribute(
+    'aria-label',
+    dateActive
+      ? `Date, ${dateDirection === 'descending' ? 'newest' : 'oldest'} first. Reverse order.`
+      : 'Sort by date, newest first.',
+  );
+  date.addEventListener('click', () => {
+    onChange(nextCopySort(selected, 'date'));
+  });
+
+  control.append(connections, date);
   return control;
 };
 
 const resultContext = (result: LookupResult): HTMLElement => {
   const context = element('section', 'result-context');
   const count = result.blocks.length;
+  const heading = element('div', 'result-heading');
+  heading.append(
+    element('h1', 'result-title', `${count} ${count === 1 ? 'block' : 'blocks'}`),
+    settingsButton(),
+  );
   context.append(
-    element('h1', 'result-title', `${count} ${count === 1 ? 'copy' : 'copies'}`),
+    heading,
     element('p', 'result-url', visibleUrl(result.normalizedUrl)),
   );
   return context;
@@ -257,10 +207,9 @@ const renderMaster = (restoreScroll = false): void => {
     return;
   }
   const page = element('div', 'master-view');
-  const header = siteHeader();
   const context = resultContext(result);
   const toolbar = element('div', 'master-toolbar');
-  toolbar.append(element('span', 'toolbar-label', 'Sort'), sortControl(currentSort, (nextSort) => {
+  toolbar.append(sortControl(currentSort, (nextSort) => {
     currentSort = nextSort;
     masterScrollPosition = 0;
     renderMaster();
@@ -268,7 +217,7 @@ const renderMaster = (restoreScroll = false): void => {
   }));
 
   const list = element('ul', 'block-list');
-  list.setAttribute('aria-label', 'Copies on Are.na');
+  list.setAttribute('aria-label', 'Blocks on Are.na');
   for (const block of sortBlocks(result.blocks, currentConnections, currentSort)) {
     const channels = currentConnections[block.id];
     const item = element('li', 'block-list-item');
@@ -287,7 +236,7 @@ const renderMaster = (restoreScroll = false): void => {
     list.append(item);
   }
 
-  page.append(header, context, toolbar, list);
+  page.append(context, toolbar, list);
   replaceApp(page);
   if (restoreScroll) requestAnimationFrame(() => window.scrollTo({ top: masterScrollPosition }));
 };
@@ -305,14 +254,14 @@ const renderDetail = (block: ArenaBlock, focusBack = true): void => {
   const channels = currentConnections[block.id];
   const page = element('div', 'detail-view');
   const navigation = element('header', 'detail-navigation');
-  const back = element('button', 'back-button', 'All copies');
+  const back = element('button', 'back-button', 'All blocks');
   back.type = 'button';
-  back.setAttribute('aria-label', 'Back to copies');
+  back.setAttribute('aria-label', 'Back to blocks');
   back.addEventListener('click', () => {
     currentView = { kind: 'master' };
     renderMaster(true);
   });
-  navigation.append(back, settingsButton());
+  navigation.append(back);
 
   const article = element('article', 'block-detail');
   const image = blockImage(block);
@@ -326,7 +275,9 @@ const renderDetail = (block: ArenaBlock, focusBack = true): void => {
   open.href = `https://www.are.na/block/${encodeURIComponent(String(block.id))}`;
   open.target = '_blank';
   open.rel = 'noopener';
-  body.append(open);
+  const actions = element('div', 'detail-actions');
+  actions.append(open, settingsButton());
+  body.append(actions);
   article.append(body);
   page.append(navigation, article);
   replaceApp(page);

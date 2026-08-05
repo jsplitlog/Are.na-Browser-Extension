@@ -1,6 +1,14 @@
 import type { ArenaBlock, ArenaChannel } from './types';
 
 export type CopySort = 'most-connections' | 'least-connections' | 'newest' | 'oldest';
+export type CopySortAxis = 'connections' | 'date';
+
+export const nextCopySort = (current: CopySort, axis: CopySortAxis): CopySort => {
+  if (axis === 'connections') {
+    return current === 'most-connections' ? 'least-connections' : 'most-connections';
+  }
+  return current === 'newest' ? 'oldest' : 'newest';
+};
 
 const connectionCount = (block: ArenaBlock, connections: Record<number, ArenaChannel[]>): number | null =>
   block.connectionCount ?? connections[block.id]?.length ?? null;

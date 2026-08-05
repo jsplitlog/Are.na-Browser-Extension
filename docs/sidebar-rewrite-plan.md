@@ -44,10 +44,11 @@ manual, privacy-cheap lookup model.
 ## UI architecture
 
 - Use a fluid-width extension page with no popup width assumptions.
-- Keep the brand and page context compact; let the document own vertical
-  scrolling.
-- Use a constrained in-document sort menu instead of the operating system's
-  native select popup.
+- Enter directly into compact page context; let the document own vertical
+  scrolling without a redundant extension-brand header.
+- Use two bounded, mutually exclusive sort controls: Connections and Date.
+  Clicking the active control reverses its order; choosing the other control
+  activates it and restores its descending default.
 - Treat search and connection data as untrusted and render it only through DOM
   creation and `textContent`.
 - Suppress stale async responses when a newer toolbar request arrives.
@@ -77,14 +78,18 @@ manual, privacy-cheap lookup model.
    master/detail side panel and apply the metadata rules.
 4. **Polish and verify sidebar migration** — integrate, document, test, build,
    and validate extension invariants.
+5. **Match sidebar to Are.na UI** — adopt Are.na's visual tokens and clipped UI
+   language.
+6. **Align the native panel hierarchy** — remove the redundant product header
+   and replace the sort menu with direct reversible controls.
 
 ## Acceptance criteria
 
 - The toolbar opens the extension in Chrome's side panel.
-- A 40-copy result scrolls naturally without a popup-height ceiling.
-- Selecting a copy opens an in-panel detail view; Back restores the master view
+- A 40-block result scrolls naturally without a popup-height ceiling.
+- Selecting a block opens an in-panel detail view; Back restores the master view
   and scroll position.
-- Each copy shows creator, plain date, total connections, and at most one
+- Each block shows creator, plain date, total connections, and at most one
   originating channel.
 - A new explicit toolbar click refreshes the open panel for that page.
 - Signed-out, skipped, miss, Premium, network, and stale-request states remain

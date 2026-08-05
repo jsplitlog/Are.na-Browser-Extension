@@ -29,4 +29,13 @@ describe('side panel release contract', () => {
   it('does not reintroduce the fixed popup width', () => {
     expect(sidepanelStyles).not.toMatch(/(?:min-|max-)?width:\s*360px/);
   });
+
+  it('uses direct block language and bounded two-way sort controls', () => {
+    expect(sidepanelSource).toContain("'Connections'");
+    expect(sidepanelSource).toContain("'Date'");
+    expect(sidepanelSource).toContain("'Sort blocks'");
+    expect(sidepanelSource).not.toContain('copy-sort-menu');
+    expect(sidepanelSource).not.toContain('siteHeader');
+    expect(sidepanelSource).not.toMatch(/copy'\s*:\s*'copies/);
+  });
 });
