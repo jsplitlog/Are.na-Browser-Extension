@@ -50,5 +50,6 @@ describe('side panel release contract', () => {
     expect(sidepanelSource).toContain("copy.rel = 'noopener'");
     expect(sidepanelSource).toContain("blockCount === 1 ? 'block' : 'blocks'");
     expect(sidepanelSource).toContain("connectionCount === 1 ? 'connection' : 'connections'");
+    expect(sidepanelSource).toContain("'result-metadata'");
   });
 });

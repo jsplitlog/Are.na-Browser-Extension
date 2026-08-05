@@ -95,33 +95,30 @@ button { font: inherit; }
   padding: 1rem var(--panel-gutter);
 }
 
-.result-heading {
-  align-items: center;
-  display: flex;
-  gap: 1rem;
-  justify-content: space-between;
+.result-title {
+  font-size: 1rem;
+  line-height: 1.15;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.result-heading .settings-button { margin-right: -0.34375rem; }
-
-.result-title {
+.result-metadata {
+  align-items: center;
+  color: var(--arena-muted);
   display: flex;
   flex-wrap: wrap;
-  font-size: 1rem;
+  font-size: 0.75rem;
   gap: 0.34375rem 1rem;
-  line-height: 1.15;
+  line-height: 1.33;
+  margin: 0.34375rem 0 0;
 }
 
 .result-total { white-space: nowrap; }
 
-.result-url {
-  color: var(--arena-text);
-  font-size: 0.8125rem;
-  line-height: 1.33;
-  margin: 0.34375rem 0 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.result-metadata .settings-button {
+  margin: -0.34375rem -0.34375rem -0.34375rem auto;
 }
 
 .master-toolbar {

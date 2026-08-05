@@ -187,8 +187,7 @@ const resultContext = (result: LookupResult): HTMLElement => {
   const context = element('section', 'result-context');
   const blockCount = result.blocks.length;
   const connectionCount = totalConnectionCount(result.blocks);
-  const heading = element('div', 'result-heading');
-  const totals = element('h1', 'result-title');
+  const totals = element('div', 'result-metadata');
   totals.append(
     element('span', 'result-total', `${blockCount} ${blockCount === 1 ? 'block' : 'blocks'}`),
     element(
@@ -198,15 +197,9 @@ const resultContext = (result: LookupResult): HTMLElement => {
         ? connectionsLoaded ? 'Connections unavailable' : 'Loading connections…'
         : `${connectionCount} ${connectionCount === 1 ? 'connection' : 'connections'}`,
     ),
-  );
-  heading.append(
-    totals,
     settingsButton(),
   );
-  context.append(
-    heading,
-    element('p', 'result-url', visibleUrl(result.normalizedUrl)),
-  );
+  context.append(element('h1', 'result-title', visibleUrl(result.normalizedUrl)), totals);
   return context;
 };
 

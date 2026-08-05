@@ -30,8 +30,10 @@ in a new tab, preserving the extension's manual, privacy-cheap lookup model.
   with `sort=created_at_asc&per=1`.
 - Preserve `meta.total_count` as the complete connection total even though only
   one channel is rendered.
-- Show both live totals side by side in the page heading: the number of matching
-  block instances and the sum of their complete per-block connection totals.
+- Use the page URL as the primary title. Beneath it, show both live totals side
+  by side as compact metadata: the number of matching block instances and the
+  sum of their complete per-block connection totals. Place Settings at the far
+  right of that same metadata line.
 
 ## Chrome architecture
 
