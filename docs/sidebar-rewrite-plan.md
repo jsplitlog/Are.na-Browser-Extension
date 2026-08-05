@@ -77,6 +77,10 @@ in a new tab, preserving the extension's manual, privacy-cheap lookup model.
   dividers, and `#00bbf7` focus rings.
 - Use Are.na's `channel.open`/`channel.public` green (`#17ac10`) and its
   2.5%-alpha row tint to distinguish open channels from neutral regular rows.
+- Follow the system color-scheme preference across the side panel and settings.
+  In dark mode, use Are.na's native dark tokens: black surfaces, `#d3d3d3`
+  primary text, `#6e6e6e` metadata, `#2f2f2f` rules, `#17b0e2` focus rings,
+  and `#2ba425` open-channel green.
 - Keep controls flat, native-looking, and bounded by one-pixel gray borders.
   Avoid translucent surfaces, backdrop blur, elevated shadows, and decorative
   motion.
@@ -118,5 +122,7 @@ in a new tab, preserving the extension's manual, privacy-cheap lookup model.
   distinct.
 - No `tabs` permission, ambient navigation listener, unsafe HTML rendering, or
   fixed 360 px side-panel width is introduced.
+- Both extension surfaces follow the operating system's light or dark mode
+  without a white loading flash.
 - Unit tests, TypeScript, production build, service-worker registration, and
   manifest target checks pass.

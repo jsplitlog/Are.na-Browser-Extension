@@ -11,6 +11,10 @@ const manifest = JSON.parse(readFileSync(resolve(root, 'public/manifest.json'), 
 };
 const sidepanelSource = readFileSync(resolve(root, 'src/sidepanel/sidepanel.ts'), 'utf8');
 const sidepanelStyles = readFileSync(resolve(root, 'src/sidepanel/sidepanel.css'), 'utf8');
+const sidepanelHtml = readFileSync(resolve(root, 'src/sidepanel/sidepanel.html'), 'utf8');
+const optionsStyles = readFileSync(resolve(root, 'src/options/options.css'), 'utf8');
+const optionsHtml = readFileSync(resolve(root, 'src/options/options.html'), 'utf8');
+const themeStyles = readFileSync(resolve(root, 'src/styles/arena-theme.css'), 'utf8');
 
 describe('side panel release contract', () => {
   it('uses the Chrome side panel without a popup or browsing-history permission', () => {
@@ -30,6 +34,19 @@ describe('side panel release contract', () => {
     expect(sidepanelStyles).not.toMatch(/(?:min-|max-)?width:\s*360px/);
   });
 
+  it('follows the system theme with Are.na light and dark palettes', () => {
+    expect(sidepanelStyles).toContain("@import '../styles/arena-theme.css'");
+    expect(optionsStyles).toContain("@import '../styles/arena-theme.css'");
+    expect(sidepanelHtml).toContain('<meta name="color-scheme" content="light dark">');
+    expect(optionsHtml).toContain('<meta name="color-scheme" content="light dark">');
+    expect(themeStyles).toContain('@media (prefers-color-scheme: dark)');
+    expect(themeStyles).toContain('--arena-surface: #000');
+    expect(themeStyles).toContain('--arena-black: #d3d3d3');
+    expect(themeStyles).toContain('--arena-line: #2f2f2f');
+    expect(themeStyles).toContain('--arena-blue: #17b0e2');
+    expect(themeStyles).toContain('--arena-channel-open: #2ba425');
+  });
+
   it('uses direct block language and bounded two-way sort controls', () => {
     expect(sidepanelSource).toContain("'Connections'");
     expect(sidepanelSource).toContain("'Date'");
@@ -41,7 +58,7 @@ describe('side panel release contract', () => {
     expect(sidepanelSource).toContain("'Loading connections…'");
     expect(sidepanelSource).toContain("channel?.status === 'open'");
     expect(sidepanelSource).toContain("channel?.status === 'public'");
-    expect(sidepanelStyles).toContain('--arena-channel-open: #17ac10');
+    expect(themeStyles).toContain('--arena-channel-open: #17ac10');
     expect(sidepanelSource).toContain("'metadata-content'");
     expect(sidepanelSource).toContain("'metadata-details'");
     expect(sidepanelSource).not.toContain('renderDetail');

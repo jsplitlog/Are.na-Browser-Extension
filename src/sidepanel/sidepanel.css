@@ -1,17 +1,7 @@
+@import '../styles/arena-theme.css';
+
 :root {
-  --arena-black: #333;
-  --arena-text: #585858;
-  --arena-muted: #999;
-  --arena-line: #eee;
-  --arena-soft: #f7f7f7;
-  --arena-blue: #00bbf7;
-  --arena-channel-open: #17ac10;
-  --arena-channel-open-background: rgb(23 172 16 / 2.5%);
   --panel-gutter: 1rem;
-  background: #fff;
-  color: var(--arena-text);
-  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -77,8 +67,8 @@ button { font: inherit; }
 
 .primary-button {
   appearance: none;
-  background: #fff;
-  border: 1px solid #ccc;
+  background: var(--arena-surface);
+  border: 1px solid var(--arena-control-border);
   border-radius: 0.25rem;
   color: var(--arena-text);
   cursor: pointer;
@@ -122,7 +112,7 @@ button { font: inherit; }
 }
 
 .master-toolbar {
-  background: #fff;
+  background: var(--arena-surface);
   border-bottom: 1px solid var(--arena-line);
   border-top: 1px solid var(--arena-line);
   padding: 0;
@@ -140,7 +130,7 @@ button { font: inherit; }
 .sort-button {
   align-items: center;
   appearance: none;
-  background: #fff;
+  background: var(--arena-surface);
   border: 0;
   border-bottom: 1px solid transparent;
   border-radius: 0;
@@ -190,7 +180,7 @@ button { font: inherit; }
 
 .block-copy {
   appearance: none;
-  background: #fff;
+  background: var(--arena-surface);
   border: 0;
   border-bottom: 1px solid var(--arena-line);
   border-radius: 0;
@@ -211,7 +201,7 @@ button { font: inherit; }
 .block-copy.channel-open { background: var(--arena-channel-open-background); }
 
 .block-copy.channel-open:hover,
-.block-copy.channel-open:active { background: rgb(23 172 16 / 7%); }
+.block-copy.channel-open:active { background: var(--arena-channel-open-active-background); }
 
 .channel-title {
   color: var(--arena-black);
