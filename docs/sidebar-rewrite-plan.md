@@ -35,7 +35,8 @@ in a new tab, preserving the extension's manual, privacy-cheap lookup model.
 - Use the page URL as the primary title. Beneath it, show both live totals side
   by side as compact metadata: the number of matching block instances and the
   sum of their complete per-block connection totals. Place Settings at the far
-  right of that same metadata line.
+  right of that same metadata line. Also show the age of the oldest matching
+  block in clipped relative form, such as `5y ago`.
 
 ## Chrome architecture
 

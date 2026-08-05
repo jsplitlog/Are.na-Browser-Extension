@@ -1,6 +1,6 @@
 import './sidepanel.css';
 import { ACTIVE_PAGE_KEY, isActivePageRequest } from '../core/active-page';
-import { formatBlockCreatedDate } from '../core/block-date';
+import { formatBlockCreatedDate, formatOldestBlockAge } from '../core/block-date';
 import { nextCopySort, sortBlocks, totalConnectionCount, type CopySort } from '../core/copy-sort';
 import type { Request, Response } from '../core/messages';
 import type { ArenaBlock, ArenaChannel, LookupResult } from '../core/types';
@@ -188,6 +188,7 @@ const resultContext = (result: LookupResult): HTMLElement => {
   const context = element('section', 'result-context');
   const blockCount = result.blocks.length;
   const connectionCount = totalConnectionCount(result.blocks);
+  const blockAge = formatOldestBlockAge(result.blocks);
   const totals = element('div', 'result-metadata');
   totals.append(
     element('span', 'result-total', `${blockCount} ${blockCount === 1 ? 'block' : 'blocks'}`),
@@ -198,8 +199,9 @@ const resultContext = (result: LookupResult): HTMLElement => {
         ? connectionsLoaded ? 'Connections unavailable' : 'Loading connections…'
         : `${connectionCount} ${connectionCount === 1 ? 'connection' : 'connections'}`,
     ),
-    settingsButton(),
   );
+  if (blockAge) totals.append(element('span', 'result-total', blockAge));
+  totals.append(settingsButton());
   context.append(element('h1', 'result-title', visibleUrl(result.normalizedUrl)), totals);
   return context;
 };

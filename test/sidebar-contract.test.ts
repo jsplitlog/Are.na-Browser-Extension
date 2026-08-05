@@ -51,5 +51,6 @@ describe('side panel release contract', () => {
     expect(sidepanelSource).toContain("blockCount === 1 ? 'block' : 'blocks'");
     expect(sidepanelSource).toContain("connectionCount === 1 ? 'connection' : 'connections'");
     expect(sidepanelSource).toContain("'result-metadata'");
+    expect(sidepanelSource).toContain('formatOldestBlockAge(result.blocks)');
   });
 });
