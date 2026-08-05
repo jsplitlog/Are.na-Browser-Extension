@@ -16,6 +16,13 @@ const pathTokens = (pathname: string): string[] => {
 const searchableTokens = (tokens: string[]): string[] => tokens.filter((token) =>
   token.length > 2 && !/^\d+$/.test(token) && !stopWords.has(token.toLowerCase()));
 
+const descriptiveSuffixToken = (parts: string[]): string | null => {
+  const suffix = parts.at(-1);
+  const usesMultiPartSuffix = parts.length >= 3 && multiPartTlds.has(parts.at(-2)!);
+  if (!suffix || usesMultiPartSuffix || suffix.length < 4) return null;
+  return searchableTokens([suffix])[0] ?? null;
+};
+
 const hostTokens = (host: string): string[] => {
   const parts = host.toLowerCase().split(':')[0]!.split('.').filter(Boolean);
   const registrableIndex = parts.length >= 3 && multiPartTlds.has(parts.at(-2)!)
@@ -23,7 +30,9 @@ const hostTokens = (host: string): string[] => {
     : Math.max(0, parts.length - 2);
   const label = parts[registrableIndex];
   const subdomains = searchableTokens(parts.slice(0, registrableIndex));
-  return [...new Set([...subdomains, ...(label ? [label] : [])])];
+  const primary = [...new Set([...subdomains, ...(label ? [label] : [])])];
+  const suffix = primary.length < 2 ? descriptiveSuffixToken(parts) : null;
+  return suffix ? [...primary, suffix] : primary;
 };
 
 export const normalizeUrl = (url: string): string => {
