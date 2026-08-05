@@ -226,7 +226,7 @@ button { font: inherit; }
 .block-copy.channel-open .channel-title { color: var(--arena-channel-open); }
 
 .block-metadata {
-  align-items: start;
+  align-items: center;
   display: grid;
   gap: 0.34375rem;
   grid-template-columns: 1.125rem minmax(0, 1fr);

@@ -21,8 +21,9 @@ in a new tab, preserving the extension's manual, privacy-cheap lookup model.
 - Use the block creation date without the word “Created.”
 - Separate metadata with layout spacing, never bullet characters.
 - Stack the date and connection count directly beneath the creator name, with
-  the avatar beside the creator line. Let the second line span the full row so
-  the date aligns flush with the avatar and the connection count aligns right.
+  the avatar vertically centered beside the creator line. Let the second line
+  span the full row so the date aligns flush with the avatar and the connection
+  count aligns right.
 - Describe totals as “connection” or “connections,” never “channel(s).”
 - Lead each master row with the creator avatar and name, then show the
   originating channel at metadata size with bold weight. Do not repeat the
