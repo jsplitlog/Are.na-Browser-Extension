@@ -50,9 +50,10 @@ const route = async (request: Request): Promise<Response> => {
       return { kind: 'result', result: await lookup(request.url) };
     case 'getConnections': {
       const result = await loadConnections(request.normalizedUrl);
-      return result.status === 'hit' && result.connections
-        ? { kind: 'connections', connections: result.connections }
-        : { kind: 'result', result };
+      if (result.status !== 'hit' || !result.connections) return { kind: 'result', result };
+      const connectionCounts = Object.fromEntries(result.blocks.flatMap((block) =>
+        block.connectionCount === null ? [] : [[block.id, block.connectionCount]]));
+      return { kind: 'connections', connections: result.connections, connectionCounts };
     }
     case 'getAuthState': {
       const state = await getAuthState();
