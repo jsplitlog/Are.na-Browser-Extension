@@ -12,32 +12,24 @@ follow your browsing in the background.
 
 - Chrome 116 or later
 - An Are.na Premium account (the v3 search endpoint requires Premium)
-- Node.js `20.19+` or `22.12+`
-- npm
 
 ## Install in Chrome
 
-1. Clone this repository and build the extension:
+1. From this repository's **Code** menu, choose **Download ZIP**.
+2. Unzip the download somewhere you will keep it.
+3. Open `chrome://extensions` in Chrome.
+4. Turn on **Developer mode**.
+5. Click **Load unpacked**.
+6. Select the `dist` folder inside the unzipped download.
+7. Optionally pin **Are.na Connections** from Chrome's Extensions menu.
 
-   ```sh
-   git clone https://github.com/jsplitlog/Are.na-Browser-Extension.git
-   cd Are.na-Browser-Extension
-   npm ci
-   npm run build
-   ```
-
-2. Open `chrome://extensions` in Chrome.
-3. Turn on **Developer mode**.
-4. Click **Load unpacked**.
-5. Select the generated `dist` folder inside this repository.
-6. Optionally pin **Are.na Connections** from Chrome's Extensions menu.
-
-After pulling an update, run `npm ci` and `npm run build` again, then click
-**Reload** on the extension's card in `chrome://extensions`.
+Chrome loads the extension directly from that folder, so do not delete it after
+installation. To update, replace the existing `dist` contents with those from a
+new download, then click **Reload** on the extension's card.
 
 ## Connect your Are.na account
 
-The development build signs in with a personal access token (PAT).
+The extension signs in with a personal access token (PAT).
 
 1. Sign in to Are.na and open
    [Personal Access Tokens](https://www.are.na/developers/personal-access-tokens).
@@ -64,9 +56,15 @@ Connections side panel will open with the matching blocks.
 Signing out removes the saved token from the extension. To revoke it completely,
 delete the token from Are.na's Personal Access Tokens page.
 
-## Verify a local build
+## Build from source
+
+Building is optional and only needed when changing the extension. It requires
+Node.js `20.19+` or `22.12+` and npm.
 
 ```sh
+npm ci
 npm test
 npm run build
 ```
+
+Load the generated `dist` folder through the same Chrome steps above.

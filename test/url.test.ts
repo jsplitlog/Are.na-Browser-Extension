@@ -34,6 +34,11 @@ describe('URL resolver helpers', () => {
       'sanctuary',
     ]);
   });
+
+  it('uses a descriptive domain suffix when a root hostname has no other search words', () => {
+    expect(buildQueries('https://h-4.digital/')).toEqual(['h-4 digital', 'h-4']);
+    expect(buildQueries('https://portfolio.design/')).toEqual(['portfolio design', 'portfolio']);
+  });
 });
 
 describe('classifyUrl', () => {
@@ -56,8 +61,11 @@ describe('classifyUrl', () => {
   it('requires two lexical URL tokens but accepts domain-plus-path and subdomain roots', () => {
     expect(classifyUrl('https://example.com/123456')).toMatchObject({ resolvable: false });
     expect(classifyUrl('https://example.com/article')).toMatchObject({ resolvable: false });
+    expect(classifyUrl('https://x.com/')).toMatchObject({ resolvable: false });
     expect(classifyUrl('https://example.com/essay')).toEqual({ resolvable: true, reason: null });
     expect(classifyUrl('https://negative.sanctuary.computer/')).toEqual({ resolvable: true, reason: null });
+    expect(classifyUrl('https://h-4.digital/')).toEqual({ resolvable: true, reason: null });
+    expect(classifyUrl('https://portfolio.design/')).toEqual({ resolvable: true, reason: null });
     expect(classifyUrl('https://example.com/an-essay-about-design')).toEqual({ resolvable: true, reason: null });
   });
 });
