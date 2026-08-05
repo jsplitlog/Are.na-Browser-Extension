@@ -55,7 +55,8 @@ in a new tab, preserving the extension's manual, privacy-cheap lookup model.
   scrolling without a redundant extension-brand header.
 - Use two bounded, mutually exclusive sort controls: Connections and Date.
   Clicking the active control reverses its order; choosing the other control
-  activates it and restores its descending default.
+  activates it and restores its descending default. Their selected underline
+  runs full-bleed from the panel edge to the center split.
 - Treat search and connection data as untrusted and render it only through DOM
   creation and `textContent`.
 - Suppress stale async responses when a newer toolbar request arrives.

@@ -125,7 +125,7 @@ button { font: inherit; }
   background: #fff;
   border-bottom: 1px solid var(--arena-line);
   border-top: 1px solid var(--arena-line);
-  padding: 0 var(--panel-gutter);
+  padding: 0;
   position: sticky;
   top: 0;
   z-index: 8;
