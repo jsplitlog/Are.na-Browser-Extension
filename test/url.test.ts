@@ -39,6 +39,11 @@ describe('URL resolver helpers', () => {
     expect(buildQueries('https://h-4.digital/')).toEqual(['h-4 digital', 'h-4']);
     expect(buildQueries('https://portfolio.design/')).toEqual(['portfolio design', 'portfolio']);
   });
+
+  it('falls back to the full hostname for short and punycode-style roots', () => {
+    expect(buildQueries('https://x.com/')).toEqual(['x com', 'x']);
+    expect(buildQueries('https://xn--bcher-kva.com/')).toEqual(['xn--bcher-kva com', 'xn--bcher-kva']);
+  });
 });
 
 describe('classifyUrl', () => {
@@ -54,18 +59,23 @@ describe('classifyUrl', () => {
     expect(classifyUrl(url).resolvable).toBe(false);
   });
 
+  it('allows a public IPv4-mapped IPv6 address after Chrome canonicalizes it', () => {
+    expect(classifyUrl('http://[::ffff:8.8.8.8]/')).toEqual({ resolvable: true, reason: null });
+  });
+
   it.each(['https://ar.pinterest.com/pin/1688918604964037/', 'https://facebook.com/533722736653230/photos/pcb.2686724', 'https://cdn.shopify.com/s/files/1/1159/3118/files/00_2015.jpg', 'https://78.media.tumblr.com/311748aa9e2330c23f719ed78b23e795/image.jpg'])('rejects known opaque assets: %s', (url) => {
     expect(classifyUrl(url).resolvable).toBe(false);
   });
 
-  it('requires two lexical URL tokens but accepts domain-plus-path and subdomain roots', () => {
-    expect(classifyUrl('https://example.com/123456')).toMatchObject({ resolvable: false });
-    expect(classifyUrl('https://example.com/article')).toMatchObject({ resolvable: false });
-    expect(classifyUrl('https://x.com/')).toMatchObject({ resolvable: false });
+  it('accepts public URLs without treating word count as a validity requirement', () => {
+    expect(classifyUrl('https://example.com/123456')).toEqual({ resolvable: true, reason: null });
+    expect(classifyUrl('https://example.com/article')).toEqual({ resolvable: true, reason: null });
+    expect(classifyUrl('https://x.com/')).toEqual({ resolvable: true, reason: null });
     expect(classifyUrl('https://example.com/essay')).toEqual({ resolvable: true, reason: null });
     expect(classifyUrl('https://negative.sanctuary.computer/')).toEqual({ resolvable: true, reason: null });
     expect(classifyUrl('https://h-4.digital/')).toEqual({ resolvable: true, reason: null });
     expect(classifyUrl('https://portfolio.design/')).toEqual({ resolvable: true, reason: null });
+    expect(classifyUrl('https://xn--bcher-kva.com/')).toEqual({ resolvable: true, reason: null });
     expect(classifyUrl('https://example.com/an-essay-about-design')).toEqual({ resolvable: true, reason: null });
   });
 });

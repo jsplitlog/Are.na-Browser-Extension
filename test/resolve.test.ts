@@ -69,6 +69,13 @@ describe('two-phase resolver integration', () => {
     expect(mocks.getBlockConnections).toHaveBeenCalledOnce();
   });
 
+  it('searches low-word-count public domains instead of skipping them', async () => {
+    mocks.searchBlocks.mockResolvedValueOnce([]);
+
+    await expect(blocksFor('https://x.com/')).resolves.toMatchObject({ status: 'miss' });
+    expect(mocks.searchBlocks).toHaveBeenCalledWith('https://x.com/', expect.anything());
+  });
+
   it('fills every missing originating channel in a partial cached result', async () => {
     const blocks = Array.from({ length: 12 }, (_, index) => ({ ...block, id: index + 1 }));
     const original = {
