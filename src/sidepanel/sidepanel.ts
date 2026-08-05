@@ -127,8 +127,8 @@ const metadata = (block: ArenaBlock): HTMLElement => {
   if (date) details.append(element('span', 'metadata-item metadata-muted', date));
   const count = connectionCount(block);
   if (count) details.append(element('span', 'metadata-item metadata-muted', count));
-  if (details.childElementCount) content.append(details);
   row.append(creatorAvatar(block), content);
+  if (details.childElementCount) row.append(details);
   return row;
 };
 
