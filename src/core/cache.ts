@@ -1,6 +1,7 @@
 import type { LookupResult } from './types';
 
-const PREFIX = 'arena-cache:';
+const CACHE_NAMESPACE = 'arena-cache:';
+const PREFIX = `${CACHE_NAMESPACE}v2:`;
 const HIT_TTL = 7 * 24 * 60 * 60 * 1000;
 const MISS_TTL = 24 * 60 * 60 * 1000;
 const MAX_ENTRIES = 2000;
@@ -10,6 +11,7 @@ const MAX_CACHE_BYTES = 8 * 1024 * 1024;
 
 interface CacheEntry { result: LookupResult; accessedAt: number }
 const keyFor = (normalizedUrl: string) => `${PREFIX}${normalizedUrl}`;
+const legacyKeyFor = (normalizedUrl: string) => `${CACHE_NAMESPACE}${normalizedUrl}`;
 const storage = () => chrome.storage.local;
 const storedBytes = (key: string, value: unknown): number =>
   new TextEncoder().encode(key).byteLength + new TextEncoder().encode(JSON.stringify(value)).byteLength;
@@ -23,7 +25,10 @@ const isEntry = (value: unknown): value is CacheEntry => {
 
 export const getCached = async (normalizedUrl: string): Promise<LookupResult | null> => {
   const key = keyFor(normalizedUrl);
-  const value = (await storage().get(key))[key];
+  const legacyKey = legacyKeyFor(normalizedUrl);
+  const stored = await storage().get([key, legacyKey]);
+  if (legacyKey in stored) await storage().remove(legacyKey);
+  const value = stored[key];
   if (!isEntry(value)) return null;
   const ttl = value.result.status === 'hit' ? HIT_TTL : value.result.status === 'miss' ? MISS_TTL : 0;
   if (!ttl || Date.now() - value.result.fetchedAt > ttl) {
@@ -42,7 +47,11 @@ export const putCached = async (result: LookupResult): Promise<void> => {
   const invalidKeys: string[] = [];
   const entries: Array<[string, CacheEntry]> = [];
   for (const [storedKey, value] of Object.entries(all)) {
-    if (!storedKey.startsWith(PREFIX) || storedKey === key) continue;
+    if (!storedKey.startsWith(CACHE_NAMESPACE) || storedKey === key) continue;
+    if (!storedKey.startsWith(PREFIX)) {
+      invalidKeys.push(storedKey);
+      continue;
+    }
     if (isEntry(value)) entries.push([storedKey, value]);
     else invalidKeys.push(storedKey);
   }
@@ -66,6 +75,6 @@ export const putCached = async (result: LookupResult): Promise<void> => {
 /** Removes only this extension's lookup cache, leaving auth and preferences intact. */
 export const clearCache = async (): Promise<void> => {
   const all = await storage().get(null);
-  const keys = Object.keys(all).filter((key) => key.startsWith(PREFIX));
+  const keys = Object.keys(all).filter((key) => key.startsWith(CACHE_NAMESPACE));
   if (keys.length) await storage().remove(keys);
 };

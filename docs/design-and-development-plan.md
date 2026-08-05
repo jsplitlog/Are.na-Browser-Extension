@@ -403,13 +403,13 @@ blocks and public connections. The §8 clean-miss fixture is now
 the time of implementation). This is expected external data drift, not a recall
 regression.
 
-**Resolver update (2026-08-05, implementation):** The original “fewer than two
-lexical path tokens” preflight rule incorrectly skipped meaningful root URLs.
-Verified example: `negative.sanctuary.computer/` is block `49271337`, and both
-`negative sanctuary` and `sanctuary` retrieve it from v3 search. Classification
-now requires two useful tokens across the **hostname plus path**; meaningful
-subdomains participate in root-page queries. Known opaque hosts/patterns remain
-hard skips, and exact normalized-URL filtering still guarantees precision.
+**Resolver update (2026-08-05, implementation):** Word count is no longer used
+as a public-URL validity test. That heuristic incorrectly skipped meaningful
+root URLs, short brands, punycode labels, numeric paths, and modern suffixes
+such as `.computer`. Every public HTTP(S) URL now receives at most two bounded
+queries, with a full-hostname fallback when linguistic tokens are sparse. Local
+and private addresses plus known opaque asset patterns remain hard skips; exact
+normalized-URL filtering still guarantees precision.
 
 ---
 

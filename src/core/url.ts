@@ -35,6 +35,9 @@ const hostTokens = (host: string): string[] => {
   return suffix ? [...primary, suffix] : primary;
 };
 
+const fullHostQuery = (hostname: string): string =>
+  hostname.toLowerCase().replace(/^www\./, '').split('.').filter(Boolean).join(' ');
+
 export const normalizeUrl = (url: string): string => {
   const parsed = new URL(url);
   const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
@@ -56,10 +59,11 @@ export const buildQueries = (url: string): string[] => {
   const label = domainLabel(parsed.host);
   const slug = searchableTokens(pathTokens(parsed.pathname)).slice(0, 4);
   const host = hostTokens(parsed.hostname);
+  const hostQuery = host.length >= 2 ? host.join(' ') : fullHostQuery(parsed.hostname);
   const queries = slug.length
     ? [slug.some((token) => label.toLowerCase() === token.toLowerCase()) ? slug.join(' ') : `${label} ${slug.join(' ')}`, slug.join(' ')]
-    : [host.join(' '), label];
-  return [...new Set(queries)].slice(0, 2);
+    : [hostQuery, label];
+  return [...new Set(queries.map((query) => query.trim()).filter(Boolean))].slice(0, 2);
 };
 
 const isPrivateAddress = (host: string): boolean => {
@@ -74,7 +78,16 @@ const isPrivateAddress = (host: string): boolean => {
   }
   const ipv6 = host.toLowerCase();
   const mappedIpv4 = ipv6.match(/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/)?.[1];
-  return ipv6 === '::' || ipv6 === '::1' || (mappedIpv4 ? isPrivateAddress(mappedIpv4) : false) ||
+  const mappedHex = ipv6.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  const mappedHexIpv4 = mappedHex ? [
+    Number.parseInt(mappedHex[1]!, 16) >> 8,
+    Number.parseInt(mappedHex[1]!, 16) & 0xff,
+    Number.parseInt(mappedHex[2]!, 16) >> 8,
+    Number.parseInt(mappedHex[2]!, 16) & 0xff,
+  ].join('.') : null;
+  return ipv6 === '::' || ipv6 === '::1' ||
+    (mappedIpv4 ? isPrivateAddress(mappedIpv4) : false) ||
+    (mappedHexIpv4 ? isPrivateAddress(mappedHexIpv4) : false) ||
     ipv6.startsWith('fc') || ipv6.startsWith('fd') || ipv6.startsWith('fe8') ||
     ipv6.startsWith('fe9') || ipv6.startsWith('fea') || ipv6.startsWith('feb');
 };
@@ -103,9 +116,7 @@ export const classifyUrl = (url: string): { resolvable: boolean; reason: string 
   if (isOpaqueAsset(host, parsed.pathname)) {
     return { resolvable: false, reason: 'This URL is an opaque asset' };
   }
-  const lexicalTokens = [...hostTokens(host), ...searchableTokens(pathTokens(parsed.pathname))];
-  if (new Set(lexicalTokens.map((token) => token.toLowerCase())).size < 2) {
-    return { resolvable: false, reason: 'This URL does not contain enough searchable words' };
-  }
+  // Search quality varies, but a public URL's shape is not a validity signal.
+  // Bounded queries plus exact normalized-URL filtering protect precision.
   return { resolvable: true, reason: null };
 };

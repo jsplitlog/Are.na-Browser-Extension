@@ -40,17 +40,27 @@ describe('cache', () => {
     expect(Object.keys(values).some((key) => key.startsWith('arena-cache:'))).toBe(false);
   });
 
+  it('invalidates cache entries created by the previous resolver', async () => {
+    values['arena-cache:example.com/a'] = {
+      result: result('miss'),
+      accessedAt: Date.now(),
+    };
+
+    expect(await getCached('example.com/a')).toBeNull();
+    expect(values['arena-cache:example.com/a']).toBeUndefined();
+  });
+
   it('evicts the least-recently-used entry at the 2000-entry cap', async () => {
     const now = Date.now();
     for (let index = 0; index < 2000; index += 1) {
-      values[`arena-cache:example.com/${index}`] = {
+      values[`arena-cache:v2:example.com/${index}`] = {
         result: { normalizedUrl: `example.com/${index}`, status: 'hit', blocks: [], fetchedAt: now },
         accessedAt: index,
       };
     }
     await putCached({ normalizedUrl: 'example.com/new', status: 'hit', blocks: [], fetchedAt: now });
-    expect(values['arena-cache:example.com/0']).toBeUndefined();
-    expect(values['arena-cache:example.com/new']).toBeDefined();
+    expect(values['arena-cache:v2:example.com/0']).toBeUndefined();
+    expect(values['arena-cache:v2:example.com/new']).toBeDefined();
     expect(Object.keys(values)).toHaveLength(2000);
   });
 
@@ -58,7 +68,7 @@ describe('cache', () => {
     const now = Date.now();
     const largeTitle = 'x'.repeat(1024 * 1024);
     for (let index = 0; index < 8; index += 1) {
-      values[`arena-cache:example.com/${index}`] = {
+      values[`arena-cache:v2:example.com/${index}`] = {
         result: {
           normalizedUrl: `example.com/${index}`,
           status: 'hit',
@@ -71,7 +81,7 @@ describe('cache', () => {
 
     await putCached(result('hit', now));
 
-    expect(values['arena-cache:example.com/0']).toBeUndefined();
-    expect(values['arena-cache:example.com/a']).toBeDefined();
+    expect(values['arena-cache:v2:example.com/0']).toBeUndefined();
+    expect(values['arena-cache:v2:example.com/a']).toBeDefined();
   });
 });
