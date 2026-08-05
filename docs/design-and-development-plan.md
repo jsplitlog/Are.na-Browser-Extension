@@ -1,12 +1,16 @@
 # Are.na Connections — design & development plan
 
+> **Historical popup plan.** The implemented `0.2.0` surface is now a Chrome
+> side panel. For the current interaction, privacy, metadata, architecture, and
+> acceptance contracts, read [`sidebar-rewrite-plan.md`](./sidebar-rewrite-plan.md).
+
 A Chrome extension that tells you whether the page you're on already exists as a
 block in someone's public Are.na channel — and lets you walk those connections.
 
 The destination is ambient: a badge that lights up as you browse. The MVP is a
 click-to-check lookup, for reasons in §1.5.
 
-Status: **plan approved, not yet implemented.**
+Status: **superseded by the implemented side-panel rewrite.**
 API surface: **v3, authenticated.** Requires an Are.na Premium account (§2.2).
 Interaction model: **manual check (click to look up).** Ambient is phase 2 (§1.5).
 

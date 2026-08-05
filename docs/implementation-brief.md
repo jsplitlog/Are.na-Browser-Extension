@@ -1,5 +1,9 @@
 # Implementation brief — Are.na Connections extension
 
+> **Historical implementation brief.** The popup implementation it describes is
+> preserved at commit `ca6ff63`. The current side-panel requirements and commit
+> sequence live in [`sidebar-rewrite-plan.md`](./sidebar-rewrite-plan.md).
+
 **This file is the handoff prompt.** It carries context and decisions from the
 planning session that aren't recoverable from the code or the plan alone. Read it
 first, then the plan.
