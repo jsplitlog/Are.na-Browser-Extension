@@ -118,7 +118,7 @@ const connectionCount = (block: ArenaBlock): string | null => {
   return `${count} ${count === 1 ? 'connection' : 'connections'}`;
 };
 
-const metadata = (block: ArenaBlock): HTMLElement => {
+const metadata = (block: ArenaBlock, channelTitle: string): HTMLElement => {
   const row = element('span', 'block-metadata');
   const content = element('span', 'metadata-content');
   content.append(element('span', 'metadata-creator', block.userName || block.userSlug || 'Are.na user'));
@@ -128,6 +128,7 @@ const metadata = (block: ArenaBlock): HTMLElement => {
   const count = connectionCount(block);
   if (count) details.append(element('span', 'metadata-item metadata-muted', count));
   row.append(creatorAvatar(block), content);
+  row.append(element('span', 'channel-title', channelTitle));
   if (details.childElementCount) row.append(details);
   return row;
 };
@@ -230,7 +231,7 @@ const renderMaster = (preserveScroll = false): void => {
     copy.target = '_blank';
     copy.rel = 'noopener';
     if (isOpenChannel(channel)) copy.classList.add('channel-open');
-    copy.append(element('span', 'channel-title', originatingChannelTitle(channels)), metadata(block));
+    copy.append(metadata(block, originatingChannelTitle(channels)));
     item.append(copy);
     list.append(item);
   }
