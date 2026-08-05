@@ -167,14 +167,14 @@ button { font: inherit; }
   content: "";
   flex: 0 0 0.34375rem;
   height: 0.34375rem;
-  margin-top: -0.1875rem;
-  transform: rotate(45deg);
+  margin-top: 0.1875rem;
+  transform: rotate(225deg);
   width: 0.34375rem;
 }
 
 .sort-button.sort-ascending[aria-pressed="true"]::after {
-  margin-top: 0.1875rem;
-  transform: rotate(225deg);
+  margin-top: -0.1875rem;
+  transform: rotate(45deg);
 }
 
 .sort-button:hover { background: var(--arena-soft); color: var(--arena-black); }
