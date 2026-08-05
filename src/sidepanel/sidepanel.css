@@ -5,6 +5,8 @@
   --arena-line: #eee;
   --arena-soft: #f7f7f7;
   --arena-blue: #00bbf7;
+  --arena-channel-open: #17ac10;
+  --arena-channel-open-background: rgb(23 172 16 / 2.5%);
   --panel-gutter: 1rem;
   background: #fff;
   color: var(--arena-text);
@@ -216,6 +218,11 @@ button { font: inherit; }
 .block-copy:hover,
 .block-copy:active { background: var(--arena-soft); }
 
+.block-copy.channel-open { background: var(--arena-channel-open-background); }
+
+.block-copy.channel-open:hover,
+.block-copy.channel-open:active { background: rgb(23 172 16 / 7%); }
+
 .channel-title {
   color: var(--arena-black);
   display: block;
@@ -224,6 +231,9 @@ button { font: inherit; }
   line-height: 1.15;
   overflow-wrap: anywhere;
 }
+
+.block-copy.channel-open .channel-title,
+.originating-channel.channel-open .originating-title { color: var(--arena-channel-open); }
 
 .block-metadata {
   align-items: center;

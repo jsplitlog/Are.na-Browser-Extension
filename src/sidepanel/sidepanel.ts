@@ -11,6 +11,7 @@ type View = { kind: 'master' } | { kind: 'detail'; blockId: number };
 
 let currentResult: LookupResult | null = null;
 let currentConnections: Record<number, ArenaChannel[]> = {};
+let connectionsLoaded = false;
 let currentSort: CopySort = 'most-connections';
 let currentView: View = { kind: 'master' };
 let masterScrollPosition = 0;
@@ -133,17 +134,21 @@ const metadata = (block: ArenaBlock): HTMLElement => {
   return row;
 };
 
+const isOpenChannel = (channel?: ArenaChannel): boolean =>
+  channel?.status === 'open' || channel?.status === 'public';
+
 const originatingChannel = (channels?: ArenaChannel[]): HTMLElement | null => {
   const channel = channels?.[0];
   if (!channel) return null;
   const label = element('span', 'originating-channel');
+  if (isOpenChannel(channel)) label.classList.add('channel-open');
   label.append(element('span', 'originating-label', 'Original channel'));
   label.append(element('span', 'originating-title', channel.title || 'Untitled channel'));
   return label;
 };
 
 const originatingChannelTitle = (channels?: ArenaChannel[]): string => {
-  if (channels === undefined) return 'Loading channel…';
+  if (channels === undefined) return connectionsLoaded ? 'Channel unavailable' : 'Loading channel…';
   return channels[0]?.title || 'Channel unavailable';
 };
 
@@ -198,7 +203,9 @@ const resultContext = (result: LookupResult): HTMLElement => {
     element(
       'h1',
       'result-title',
-      count === null ? 'Loading connections…' : `${count} ${count === 1 ? 'connection' : 'connections'}`,
+      count === null
+        ? connectionsLoaded ? 'Connections unavailable' : 'Loading connections…'
+        : `${count} ${count === 1 ? 'connection' : 'connections'}`,
     ),
     settingsButton(),
   );
@@ -229,9 +236,11 @@ const renderMaster = (restoreScroll = false): void => {
   list.setAttribute('aria-label', 'Blocks on Are.na');
   for (const block of sortBlocks(result.blocks, currentConnections, currentSort)) {
     const channels = currentConnections[block.id];
+    const channel = channels?.[0];
     const item = element('li', 'block-list-item');
     const copy = element('button', 'block-copy');
     copy.type = 'button';
+    if (isOpenChannel(channel)) copy.classList.add('channel-open');
     copy.append(element('span', 'channel-title', originatingChannelTitle(channels)), metadata(block));
     copy.addEventListener('click', () => {
       masterScrollPosition = window.scrollY;
@@ -313,6 +322,7 @@ const startLookup = async (url: string): Promise<void> => {
   const generation = ++requestGeneration;
   currentResult = null;
   currentConnections = {};
+  connectionsLoaded = false;
   currentView = { kind: 'master' };
   masterScrollPosition = 0;
   renderState('Looking up page…', undefined, undefined, true);
@@ -332,7 +342,8 @@ const startLookup = async (url: string): Promise<void> => {
     const phaseTwo = await send({ kind: 'getConnections', normalizedUrl: phaseOne.result.normalizedUrl });
     if (generation !== requestGeneration) return;
     if (phaseTwo.kind === 'result') {
-      renderLookupStatus(phaseTwo.result);
+      connectionsLoaded = true;
+      renderCurrentView(currentView.kind === 'master');
       return;
     }
     if (phaseTwo.kind !== 'connections') throw new Error('Unexpected connections response');
@@ -341,10 +352,16 @@ const startLookup = async (url: string): Promise<void> => {
       if (count !== undefined) block.connectionCount = count;
     }
     currentConnections = phaseTwo.connections;
+    connectionsLoaded = true;
     renderCurrentView(currentView.kind === 'master');
   } catch {
     if (generation === requestGeneration) {
-      renderState('Couldn’t reach Are.na.');
+      if (currentResult) {
+        connectionsLoaded = true;
+        renderCurrentView(currentView.kind === 'master');
+      } else {
+        renderState('Couldn’t reach Are.na.');
+      }
     }
   }
 };
@@ -356,6 +373,7 @@ const handleActivePage = (value: unknown): void => {
     latestRequestUrl = '';
     currentResult = null;
     currentConnections = {};
+    connectionsLoaded = false;
     currentView = { kind: 'master' };
     renderIdle();
     return;

@@ -56,6 +56,9 @@ manual, privacy-cheap lookup model.
 - Treat search and connection data as untrusted and render it only through DOM
   creation and `textContent`.
 - Suppress stale async responses when a newer toolbar request arrives.
+- Treat channel enrichment as progressive metadata. A failed channel request
+  may mark that row unavailable, but must never replace a valid block result
+  with a global error state; missing rows are retried on the next lookup.
 - Support pointer and keyboard navigation throughout the sort controls and
   master/detail transition.
 
@@ -65,6 +68,8 @@ manual, privacy-cheap lookup model.
   `2fcb6d2b85b4d6fbe6cd1a36641aac2d91955c47`: Arial, white surfaces, compact
   spacing, `#333` headings, `#585858` body text, `#999` metadata, `#eee`
   dividers, and `#00bbf7` focus rings.
+- Use Are.na's `channel.open`/`channel.public` green (`#17ac10`) and its
+  2.5%-alpha row tint to distinguish open channels from neutral regular rows.
 - Keep controls flat, native-looking, and bounded by one-pixel gray borders.
   Avoid translucent surfaces, backdrop blur, elevated shadows, and decorative
   motion.

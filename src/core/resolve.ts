@@ -60,31 +60,44 @@ export const connectionsFor = async (
   const missingBlocks = result.blocks.filter(({ id }) =>
     !Object.prototype.hasOwnProperty.call(existingConnections, id));
   if (!missingBlocks.length) {
-    await recordLookup(Object.values(existingConnections).some((channels) => channels.length > 0));
+    try {
+      await recordLookup(Object.values(existingConnections).some((channels) => channels.length > 0));
+    } catch {
+      // Lookup bookkeeping must not invalidate a usable result.
+    }
     return result;
   }
-  try {
-    const ordered = [...missingBlocks]
-      .sort((a, b) => (b.connectionCount ?? 0) - (a.connectionCount ?? 0));
-    const activeBudget = budget ?? createRequestBudget(Math.max(8, ordered.length * 2));
-    const pairs = await Promise.all(ordered.map(async (block) => {
+
+  const ordered = [...missingBlocks]
+    .sort((a, b) => (b.connectionCount ?? 0) - (a.connectionCount ?? 0));
+  const activeBudget = budget ?? createRequestBudget(Math.max(8, ordered.length * 2));
+  const pairs = (await Promise.all(ordered.map(async (block) => {
+    try {
       const response = await getBlockConnections(block.id, activeBudget);
       block.connectionCount = response.total;
       return [block.id, response.channels] as const;
-    }));
-    const completeConnections: Record<number, ArenaChannel[]> = {
-      ...existingConnections,
-      ...Object.fromEntries(pairs),
-    };
-    const complete: LookupResult = {
-      ...result,
-      blocks: [...result.blocks],
-      connections: completeConnections,
-    };
+    } catch {
+      return null;
+    }
+  }))).filter((pair): pair is readonly [number, ArenaChannel[]] => pair !== null);
+  const completeConnections: Record<number, ArenaChannel[]> = {
+    ...existingConnections,
+    ...Object.fromEntries(pairs),
+  };
+  const complete: LookupResult = {
+    ...result,
+    blocks: [...result.blocks],
+    connections: completeConnections,
+  };
+  try {
     await putCached(complete);
-    await recordLookup(Object.values(completeConnections).some((channels) => channels.length > 0));
-    return complete;
-  } catch (error) {
-    return { ...result, status: statusForError(error), fetchedAt: Date.now() };
+  } catch {
+    // Cache writes are best-effort after a successful lookup.
   }
+  try {
+    await recordLookup(Object.values(completeConnections).some((channels) => channels.length > 0));
+  } catch {
+    // Lookup bookkeeping must not invalidate a usable result.
+  }
+  return complete;
 };
