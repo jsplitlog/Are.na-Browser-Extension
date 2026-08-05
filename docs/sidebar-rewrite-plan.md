@@ -3,9 +3,8 @@
 ## Goal
 
 Replace the fixed-size action popup with a persistent Chrome side panel that can
-comfortably present long result sets and a focused block-detail view. The panel
-should feel closer to Are.na's block viewer while preserving the extension's
-manual, privacy-cheap lookup model.
+comfortably present long result sets. Each result opens its native Are.na block
+in a new tab, preserving the extension's manual, privacy-cheap lookup model.
 
 ## Product model
 
@@ -13,10 +12,9 @@ manual, privacy-cheap lookup model.
 - The side panel remains available as a global companion, but it does not follow
   tab changes or send browsing activity automatically.
 - A new toolbar click explicitly hands the active page to the open panel.
-- The master view lists discrete matching block copies and preserves sort and
-  scroll state while a detail view is open.
-- The detail view keeps the block in context and links to its canonical Are.na
-  page.
+- The results view lists discrete matching block copies and preserves sort and
+  scroll state while outbound blocks open separately.
+- Selecting a row opens its canonical Are.na block directly in a new tab.
 
 ## Metadata rules
 
@@ -32,8 +30,8 @@ manual, privacy-cheap lookup model.
   with `sort=created_at_asc&per=1`.
 - Preserve `meta.total_count` as the complete connection total even though only
   one channel is rendered.
-- Sum those complete per-block totals in the page heading so it describes all
-  connections across every matching block instance.
+- Show both live totals side by side in the page heading: the number of matching
+  block instances and the sum of their complete per-block connection totals.
 
 ## Chrome architecture
 
@@ -63,7 +61,7 @@ manual, privacy-cheap lookup model.
   may mark that row unavailable, but must never replace a valid block result
   with a global error state; missing rows are retried on the next lookup.
 - Support pointer and keyboard navigation throughout the sort controls and
-  master/detail transition.
+  outbound block links.
 
 ## Visual language
 
@@ -96,14 +94,17 @@ manual, privacy-cheap lookup model.
    and replace the sort menu with direct reversible controls.
 7. **Lead with connection context** — promote original channel names, load them
    for every result, and sum their complete connection totals in the heading.
+8. **Open native block pages directly** — remove the redundant local detail
+   route and make every result row a canonical Are.na link.
 
 ## Acceptance criteria
 
 - The toolbar opens the extension in Chrome's side panel.
-- A result with 40 matching blocks scrolls naturally without a popup-height
-  ceiling while its heading reports the summed connection total.
-- Selecting a block opens an in-panel detail view; Back restores the master view
-  and scroll position.
+- A result with many matching blocks scrolls naturally without a popup-height
+  ceiling while its heading reports both the block count and summed connection
+  total.
+- Selecting a block opens its canonical Are.na page in a new tab while the
+  sidebar retains its result state.
 - Each block shows creator, plain date, total connections, and at most one
   originating channel.
 - A new explicit toolbar click refreshes the open panel for that page.

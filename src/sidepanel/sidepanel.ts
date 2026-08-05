@@ -7,14 +7,10 @@ import type { ArenaBlock, ArenaChannel, LookupResult } from '../core/types';
 
 const app = document.querySelector<HTMLElement>('#app');
 
-type View = { kind: 'master' } | { kind: 'detail'; blockId: number };
-
 let currentResult: LookupResult | null = null;
 let currentConnections: Record<number, ArenaChannel[]> = {};
 let connectionsLoaded = false;
 let currentSort: CopySort = 'most-connections';
-let currentView: View = { kind: 'master' };
-let masterScrollPosition = 0;
 let requestGeneration = 0;
 let latestRequestedAt = -1;
 let latestRequestUrl = '';
@@ -139,16 +135,6 @@ const metadata = (block: ArenaBlock): HTMLElement => {
 const isOpenChannel = (channel?: ArenaChannel): boolean =>
   channel?.status === 'open' || channel?.status === 'public';
 
-const originatingChannel = (channels?: ArenaChannel[]): HTMLElement | null => {
-  const channel = channels?.[0];
-  if (!channel) return null;
-  const label = element('span', 'originating-channel');
-  if (isOpenChannel(channel)) label.classList.add('channel-open');
-  label.append(element('span', 'originating-label', 'Original channel'));
-  label.append(element('span', 'originating-title', channel.title || 'Untitled channel'));
-  return label;
-};
-
 const originatingChannelTitle = (channels?: ArenaChannel[]): string => {
   if (channels === undefined) return connectionsLoaded ? 'Channel unavailable' : 'Loading channel…';
   return channels[0]?.title || 'Channel unavailable';
@@ -199,16 +185,22 @@ const sortControl = (selected: CopySort, onChange: (sort: CopySort) => void): HT
 
 const resultContext = (result: LookupResult): HTMLElement => {
   const context = element('section', 'result-context');
-  const count = totalConnectionCount(result.blocks);
+  const blockCount = result.blocks.length;
+  const connectionCount = totalConnectionCount(result.blocks);
   const heading = element('div', 'result-heading');
-  heading.append(
+  const totals = element('h1', 'result-title');
+  totals.append(
+    element('span', 'result-total', `${blockCount} ${blockCount === 1 ? 'block' : 'blocks'}`),
     element(
-      'h1',
-      'result-title',
-      count === null
+      'span',
+      'result-total',
+      connectionCount === null
         ? connectionsLoaded ? 'Connections unavailable' : 'Loading connections…'
-        : `${count} ${count === 1 ? 'connection' : 'connections'}`,
+        : `${connectionCount} ${connectionCount === 1 ? 'connection' : 'connections'}`,
     ),
+  );
+  heading.append(
+    totals,
     settingsButton(),
   );
   context.append(
@@ -218,18 +210,18 @@ const resultContext = (result: LookupResult): HTMLElement => {
   return context;
 };
 
-const renderMaster = (restoreScroll = false): void => {
+const renderMaster = (preserveScroll = false): void => {
   const result = currentResult;
   if (!result) {
     renderIdle();
     return;
   }
+  const scrollPosition = preserveScroll ? window.scrollY : 0;
   const page = element('div', 'master-view');
   const context = resultContext(result);
   const toolbar = element('div', 'master-toolbar');
   toolbar.append(sortControl(currentSort, (nextSort) => {
     currentSort = nextSort;
-    masterScrollPosition = 0;
     renderMaster();
     window.scrollTo({ top: 0 });
   }));
@@ -240,84 +232,19 @@ const renderMaster = (restoreScroll = false): void => {
     const channels = currentConnections[block.id];
     const channel = channels?.[0];
     const item = element('li', 'block-list-item');
-    const copy = element('button', 'block-copy');
-    copy.type = 'button';
+    const copy = element('a', 'block-copy');
+    copy.href = `https://www.are.na/block/${encodeURIComponent(String(block.id))}`;
+    copy.target = '_blank';
+    copy.rel = 'noopener';
     if (isOpenChannel(channel)) copy.classList.add('channel-open');
     copy.append(element('span', 'channel-title', originatingChannelTitle(channels)), metadata(block));
-    copy.addEventListener('click', () => {
-      masterScrollPosition = window.scrollY;
-      currentView = { kind: 'detail', blockId: block.id };
-      renderDetail(block);
-      window.scrollTo({ top: 0 });
-    });
     item.append(copy);
     list.append(item);
   }
 
   page.append(context, toolbar, list);
   replaceApp(page);
-  if (restoreScroll) requestAnimationFrame(() => window.scrollTo({ top: masterScrollPosition }));
-};
-
-const blockImage = (block: ArenaBlock): HTMLImageElement | null => {
-  if (!block.imageUrl) return null;
-  const image = element('img', 'detail-image');
-  image.src = block.imageUrl;
-  image.alt = block.title ? `Preview of ${block.title}` : 'Block preview';
-  image.addEventListener('error', () => image.remove(), { once: true });
-  return image;
-};
-
-const renderDetail = (block: ArenaBlock, focusBack = true): void => {
-  const channels = currentConnections[block.id];
-  const page = element('div', 'detail-view');
-  const navigation = element('header', 'detail-navigation');
-  const back = element('button', 'back-button', 'All blocks');
-  back.type = 'button';
-  back.setAttribute('aria-label', 'Back to blocks');
-  back.addEventListener('click', () => {
-    currentView = { kind: 'master' };
-    renderMaster(true);
-  });
-  navigation.append(back);
-
-  const article = element('article', 'block-detail');
-  const image = blockImage(block);
-  if (image) article.append(image);
-  const body = element('div', 'detail-body');
-  body.append(element('h1', 'detail-title', block.title || 'Untitled block'), metadata(block));
-  const origin = originatingChannel(channels);
-  if (origin) body.append(origin);
-
-  const open = element('a', 'arena-link', 'Open block');
-  open.href = `https://www.are.na/block/${encodeURIComponent(String(block.id))}`;
-  open.target = '_blank';
-  open.rel = 'noopener';
-  const actions = element('div', 'detail-actions');
-  actions.append(open, settingsButton());
-  body.append(actions);
-  article.append(body);
-  page.append(navigation, article);
-  replaceApp(page);
-  if (focusBack) requestAnimationFrame(() => back.focus());
-};
-
-const renderCurrentView = (preserveScroll = false): void => {
-  if (!currentResult) {
-    renderIdle();
-    return;
-  }
-  if (currentView.kind === 'detail') {
-    const { blockId } = currentView;
-    const block = currentResult.blocks.find(({ id }) => id === blockId);
-    if (block) {
-      renderDetail(block, false);
-      return;
-    }
-    currentView = { kind: 'master' };
-  }
-  if (preserveScroll) masterScrollPosition = window.scrollY;
-  renderMaster(preserveScroll);
+  if (preserveScroll) requestAnimationFrame(() => window.scrollTo({ top: scrollPosition }));
 };
 
 const startLookup = async (url: string): Promise<void> => {
@@ -325,8 +252,6 @@ const startLookup = async (url: string): Promise<void> => {
   currentResult = null;
   currentConnections = {};
   connectionsLoaded = false;
-  currentView = { kind: 'master' };
-  masterScrollPosition = 0;
   renderState('Looking up page…', undefined, undefined, true);
 
   try {
@@ -345,7 +270,7 @@ const startLookup = async (url: string): Promise<void> => {
     if (generation !== requestGeneration) return;
     if (phaseTwo.kind === 'result') {
       connectionsLoaded = true;
-      renderCurrentView(currentView.kind === 'master');
+      renderMaster(true);
       return;
     }
     if (phaseTwo.kind !== 'connections') throw new Error('Unexpected connections response');
@@ -355,12 +280,12 @@ const startLookup = async (url: string): Promise<void> => {
     }
     currentConnections = phaseTwo.connections;
     connectionsLoaded = true;
-    renderCurrentView(currentView.kind === 'master');
+    renderMaster(true);
   } catch {
     if (generation === requestGeneration) {
       if (currentResult) {
         connectionsLoaded = true;
-        renderCurrentView(currentView.kind === 'master');
+        renderMaster(true);
       } else {
         renderState('Couldn’t reach Are.na.');
       }
@@ -376,7 +301,6 @@ const handleActivePage = (value: unknown): void => {
     currentResult = null;
     currentConnections = {};
     connectionsLoaded = false;
-    currentView = { kind: 'master' };
     renderIdle();
     return;
   }

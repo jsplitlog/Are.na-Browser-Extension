@@ -44,5 +44,11 @@ describe('side panel release contract', () => {
     expect(sidepanelStyles).toContain('--arena-channel-open: #17ac10');
     expect(sidepanelSource).toContain("'metadata-content'");
     expect(sidepanelSource).toContain("'metadata-details'");
+    expect(sidepanelSource).not.toContain('renderDetail');
+    expect(sidepanelSource).not.toContain('currentView');
+    expect(sidepanelSource).toContain("copy.target = '_blank'");
+    expect(sidepanelSource).toContain("copy.rel = 'noopener'");
+    expect(sidepanelSource).toContain("blockCount === 1 ? 'block' : 'blocks'");
+    expect(sidepanelSource).toContain("connectionCount === 1 ? 'connection' : 'connections'");
   });
 });
