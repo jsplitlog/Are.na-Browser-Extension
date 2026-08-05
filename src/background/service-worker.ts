@@ -1,4 +1,5 @@
 import { getAuthState, signInWithOAuth, signOut } from '../core/auth';
+import { ACTIVE_PAGE_KEY, type ActivePageRequest } from '../core/active-page';
 import { createRequestBudget, type RequestBudget } from '../core/arena';
 import { getCached } from '../core/cache';
 import type { Request, Response } from '../core/messages';
@@ -72,4 +73,19 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
     .then(sendResponse)
     .catch(() => sendResponse({ kind: 'result', result: errorResult('') } satisfies Response));
   return true;
+});
+
+chrome.action.onClicked.addListener((tab) => {
+  if (!tab.url || tab.windowId === undefined) return;
+
+  const request = {
+    url: tab.url,
+    requestedAt: Date.now(),
+  } satisfies ActivePageRequest;
+
+  // Start the session handoff before opening, while preserving the action click's
+  // user activation for chrome.sidePanel.open(). The panel also observes storage
+  // changes, so a slower storage write cannot leave it showing stale page data.
+  void chrome.storage.session.set({ [ACTIVE_PAGE_KEY]: request }).catch(() => undefined);
+  void chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => undefined);
 });

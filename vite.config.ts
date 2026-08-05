@@ -13,7 +13,7 @@ export default defineConfig({
     modulePreload: false,
     rollupOptions: {
       input: {
-        'popup/popup': resolve(import.meta.dirname, 'src/popup/popup.html'),
+        'sidepanel/sidepanel': resolve(import.meta.dirname, 'src/sidepanel/sidepanel.html'),
         'options/options': resolve(import.meta.dirname, 'src/options/options.html'),
         'service-worker': resolve(import.meta.dirname, 'src/background/service-worker.ts'),
       },

@@ -2,21 +2,24 @@
   "manifest_version": 3,
   "name": "Are.na Connections",
   "version": "0.1.1",
+  "minimum_chrome_version": "116",
   "description": "See which public Are.na channels already hold the page you're on.",
-  "permissions": ["activeTab", "storage", "identity"],
+  "permissions": ["activeTab", "storage", "identity", "sidePanel"],
   "host_permissions": ["https://api.are.na/*"],
   "background": {
     "service_worker": "background/service-worker.js",
     "type": "module"
   },
   "action": {
-    "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "icons/16.png",
       "32": "icons/32.png",
       "48": "icons/48.png",
       "128": "icons/128.png"
     }
+  },
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
   },
   "options_page": "options/options.html",
   "icons": {
