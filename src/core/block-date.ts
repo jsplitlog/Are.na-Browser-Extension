@@ -30,11 +30,11 @@ export const formatOldestBlockAge = (
   });
   if (!timestamps.length) return null;
   const elapsed = Math.max(0, now - Math.min(...timestamps));
-  if (elapsed >= 365 * DAY) return `${Math.floor(elapsed / (365 * DAY))}y old`;
-  if (elapsed >= 30 * DAY) return `${Math.floor(elapsed / (30 * DAY))}mo old`;
-  if (elapsed >= 7 * DAY) return `${Math.floor(elapsed / (7 * DAY))}w old`;
-  if (elapsed >= DAY) return `${Math.floor(elapsed / DAY)}d old`;
-  if (elapsed >= HOUR) return `${Math.floor(elapsed / HOUR)}h old`;
-  if (elapsed >= MINUTE) return `${Math.floor(elapsed / MINUTE)}m old`;
+  if (elapsed >= 365 * DAY) return `${Math.floor(elapsed / (365 * DAY))}y`;
+  if (elapsed >= 30 * DAY) return `${Math.floor(elapsed / (30 * DAY))}mo`;
+  if (elapsed >= 7 * DAY) return `${Math.floor(elapsed / (7 * DAY))}w`;
+  if (elapsed >= DAY) return `${Math.floor(elapsed / DAY)}d`;
+  if (elapsed >= HOUR) return `${Math.floor(elapsed / HOUR)}h`;
+  if (elapsed >= MINUTE) return `${Math.floor(elapsed / MINUTE)}m`;
   return 'now';
 };

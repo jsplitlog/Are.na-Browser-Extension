@@ -17,8 +17,8 @@ describe('block creation date formatting', () => {
       { createdAt: '2021-08-05T00:00:00Z' },
       { createdAt: '2024-08-05T00:00:00Z' },
       { createdAt: 'not-a-date' },
-    ], now)).toBe('5y old');
-    expect(formatOldestBlockAge([{ createdAt: '2026-07-20T00:00:00Z' }], now)).toBe('2w old');
+    ], now)).toBe('5y');
+    expect(formatOldestBlockAge([{ createdAt: '2026-07-20T00:00:00Z' }], now)).toBe('2w');
   });
 
   it('omits an age when no block has a valid creation date', () => {

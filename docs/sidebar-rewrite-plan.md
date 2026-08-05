@@ -36,7 +36,7 @@ in a new tab, preserving the extension's manual, privacy-cheap lookup model.
   by side as compact metadata: the number of matching block instances and the
   sum of their complete per-block connection totals. Place Settings at the far
   right of that same metadata line. Also show the age of the oldest matching
-  block in clipped relative form, such as `5y old`.
+  block as a clipped relative value, such as `5y`.
 
 ## Chrome architecture
 
