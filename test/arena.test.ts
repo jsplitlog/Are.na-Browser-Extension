@@ -83,23 +83,41 @@ describe('arena API', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('parses channel owners (not users) without reordering', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ data: [
-      { id: 9, slug: 'first', title: 'First', owner: { slug: 'owner-one', full_name: 'One' }, user: { slug: 'wrong' } },
-      { id: 8, slug: 'second', title: 'Second', owner: { slug: 'owner-two' } },
-    ], meta: { total_count: 14 } })));
+  it('requests only the oldest connection and preserves the total connection count', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json({ data: [
+      { id: 9, slug: 'original', title: 'Original', owner: { slug: 'owner-one', full_name: 'One' }, user: { slug: 'wrong' } },
+    ], meta: { total_count: 14 } }));
+    vi.stubGlobal('fetch', fetchMock);
+
     await expect(getBlockConnections(42)).resolves.toEqual({ channels: [
-      expect.objectContaining({ slug: 'first', ownerSlug: 'owner-one', webUrl: 'https://www.are.na/owner-one/first' }),
-      expect.objectContaining({ slug: 'second', ownerSlug: 'owner-two' }),
+      expect.objectContaining({ slug: 'original', ownerSlug: 'owner-one', webUrl: 'https://www.are.na/owner-one/original' }),
     ], total: 14 });
+
+    const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    expect(requestUrl.pathname).toBe('/v3/blocks/42/connections');
+    expect(Object.fromEntries(requestUrl.searchParams)).toEqual({ per: '1', sort: 'created_at_asc' });
   });
 
-  it('uses returned channels when connection count metadata is absent', async () => {
+  it('falls back to the returned original channel when connection count metadata is absent', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ data: [
-      { id: 9, slug: 'first', owner: { slug: 'owner-one' } },
-      { id: 8, slug: 'second', owner: { slug: 'owner-two' } },
+      { id: 9, slug: 'original', owner: { slug: 'owner-one' } },
     ] })));
 
-    await expect(getBlockConnections(42)).resolves.toMatchObject({ total: 2 });
+    await expect(getBlockConnections(42)).resolves.toMatchObject({ total: 1 });
+  });
+
+  it('uses legacy total metadata while discarding malformed connection data', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({
+      data: [{ id: 'not-a-number', slug: 'broken' }],
+      meta: { total: 6 },
+    })));
+
+    await expect(getBlockConnections(42)).resolves.toEqual({ channels: [], total: 6 });
+  });
+
+  it('returns a safe empty result for a malformed connections response', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ data: 'not-an-array', meta: { total_count: 'many' } })));
+
+    await expect(getBlockConnections(42)).resolves.toEqual({ channels: [], total: 0 });
   });
 });

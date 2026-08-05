@@ -68,4 +68,59 @@ describe('two-phase resolver integration', () => {
     expect(mocks.searchBlocks).toHaveBeenCalledOnce();
     expect(mocks.getBlockConnections).toHaveBeenCalledOnce();
   });
+
+  it('fills every missing originating channel in a partial cached result', async () => {
+    const blocks = Array.from({ length: 12 }, (_, index) => ({ ...block, id: index + 1 }));
+    const original = {
+      id: 100,
+      slug: 'already-cached',
+      title: 'Already cached',
+      ownerSlug: 'owner',
+      ownerName: 'Owner',
+      status: 'public',
+      webUrl: 'https://www.are.na/owner/already-cached',
+    };
+    const partial: LookupResult = {
+      normalizedUrl: 'example.com/an-article-about-design',
+      status: 'hit',
+      blocks,
+      fetchedAt: Date.now(),
+      connections: { 1: [original] },
+    };
+
+    const complete = await connectionsFor(partial);
+
+    expect(mocks.getBlockConnections).toHaveBeenCalledTimes(11);
+    expect(mocks.getBlockConnections).not.toHaveBeenCalledWith(1, expect.anything());
+    expect(Object.keys(complete.connections ?? {})).toHaveLength(12);
+    expect(complete.connections?.[1]).toEqual([original]);
+  });
+
+  it('keeps a valid block result when one channel enrichment fails', async () => {
+    const blocks = Array.from({ length: 3 }, (_, index) => ({ ...block, id: index + 1 }));
+    const result: LookupResult = {
+      normalizedUrl: 'example.com/an-article-about-design',
+      status: 'hit',
+      blocks,
+      fetchedAt: Date.now(),
+    };
+    mocks.getBlockConnections.mockImplementation(async (id: number) => {
+      if (id === 2) throw new mocks.ArenaError('network');
+      return {
+        channels: [{ id: id + 100, slug: `channel-${id}`, title: `Channel ${id}` }],
+        total: id,
+      };
+    });
+
+    const partial = await connectionsFor(result);
+
+    expect(partial.status).toBe('hit');
+    expect(Object.keys(partial.connections ?? {})).toEqual(['1', '3']);
+
+    mocks.getBlockConnections.mockResolvedValue({ channels: [], total: 2 });
+    const complete = await connectionsFor(partial);
+
+    expect(mocks.getBlockConnections).toHaveBeenLastCalledWith(2, expect.anything());
+    expect(Object.keys(complete.connections ?? {})).toEqual(['1', '2', '3']);
+  });
 });

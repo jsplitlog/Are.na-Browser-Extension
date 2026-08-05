@@ -1,14 +1,4 @@
-:root {
-  --arena-black: #333;
-  --arena-text: #585858;
-  --arena-muted: #999;
-  --arena-line: #eee;
-  --arena-blue: #00bbf7;
-  background: #fff;
-  color: var(--arena-text);
-  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-  font-synthesis: none;
-}
+@import '../styles/arena-theme.css';
 
 * { box-sizing: border-box; }
 body { margin: 0; }
@@ -72,7 +62,7 @@ label {
 
 input[type="password"] {
   appearance: none;
-  background: #fff;
+  background: var(--arena-input);
   border: 1px solid var(--arena-muted);
   border-radius: 0.25em;
   color: var(--arena-black);
@@ -108,8 +98,8 @@ input[type="password"]:focus {
 
 button {
   appearance: none;
-  background: #fff;
-  border: 1px solid #ccc;
+  background: var(--arena-surface);
+  border: 1px solid var(--arena-control-border);
   border-radius: 0.25em;
   color: var(--arena-text);
   cursor: pointer;

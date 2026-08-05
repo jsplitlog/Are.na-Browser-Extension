@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sortBlocks } from '../src/core/copy-sort';
+import { nextCopySort, sortBlocks, totalConnectionCount } from '../src/core/copy-sort';
 import type { ArenaBlock, ArenaChannel } from '../src/core/types';
 
 const block = (id: number, createdAt: string | null, connectionCount: number | null): ArenaBlock => ({
@@ -24,6 +24,24 @@ const blocks = [
 const connections: Record<number, ArenaChannel[]> = { 2: [{}, {}, {}] as ArenaChannel[] };
 
 describe('copy sorting', () => {
+  it('sums connections only when every block total is known', () => {
+    expect(totalConnectionCount(blocks)).toBeNull();
+    expect(totalConnectionCount([
+      block(1, null, 2),
+      block(2, null, 3),
+      block(3, null, 0),
+    ])).toBe(5);
+  });
+
+  it('activates one axis at a time and reverses the active axis', () => {
+    expect(nextCopySort('most-connections', 'connections')).toBe('least-connections');
+    expect(nextCopySort('least-connections', 'connections')).toBe('most-connections');
+    expect(nextCopySort('oldest', 'connections')).toBe('most-connections');
+    expect(nextCopySort('newest', 'date')).toBe('oldest');
+    expect(nextCopySort('oldest', 'date')).toBe('newest');
+    expect(nextCopySort('least-connections', 'date')).toBe('newest');
+  });
+
   it('sorts by known connection totals, falling back to loaded rows', () => {
     expect(sortBlocks(blocks, connections, 'most-connections').map(({ id }) => id)).toEqual([3, 2, 1, 4]);
     expect(sortBlocks(blocks, connections, 'least-connections').map(({ id }) => id)).toEqual([4, 1, 2, 3]);

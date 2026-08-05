@@ -11,6 +11,10 @@ export type Request =
 
 export type Response =
   | { kind: 'result'; result: LookupResult }
-  | { kind: 'connections'; connections: Record<number, ArenaChannel[]> }
+  | {
+    kind: 'connections';
+    connections: Record<number, ArenaChannel[]>;
+    connectionCounts: Record<number, number>;
+  }
   | { kind: 'authState'; signedIn: boolean; userSlug: string | null; tier: string | null }
   | { kind: 'ok' };

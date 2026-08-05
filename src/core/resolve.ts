@@ -2,7 +2,7 @@ import { getToken } from './auth';
 import { ArenaError, createRequestBudget, getBlockConnections, searchBlocks, type RequestBudget } from './arena';
 import { getCached, putCached } from './cache';
 import { recordLookup } from './settings';
-import type { LookupResult, LookupStatus } from './types';
+import type { ArenaChannel, LookupResult, LookupStatus } from './types';
 import { classifyUrl, normalizeUrl } from './url';
 
 const resultFor = (normalizedUrl: string, status: LookupStatus): LookupResult => ({
@@ -53,27 +53,51 @@ export const blocksFor = async (
 
 export const connectionsFor = async (
   result: LookupResult,
-  budget: RequestBudget = createRequestBudget(8),
+  budget?: RequestBudget,
 ): Promise<LookupResult> => {
   if (result.status !== 'hit') return result;
-  if (result.connections) {
-    await recordLookup(Object.values(result.connections).some((channels) => channels.length > 0));
+  const existingConnections = result.connections ?? {};
+  const missingBlocks = result.blocks.filter(({ id }) =>
+    !Object.prototype.hasOwnProperty.call(existingConnections, id));
+  if (!missingBlocks.length) {
+    try {
+      await recordLookup(Object.values(existingConnections).some((channels) => channels.length > 0));
+    } catch {
+      // Lookup bookkeeping must not invalidate a usable result.
+    }
     return result;
   }
-  try {
-    const ordered = [...result.blocks]
-      .sort((a, b) => (b.connectionCount ?? 0) - (a.connectionCount ?? 0))
-      .slice(0, 8);
-    const pairs = await Promise.all(ordered.map(async (block) => {
-      const response = await getBlockConnections(block.id, budget);
+
+  const ordered = [...missingBlocks]
+    .sort((a, b) => (b.connectionCount ?? 0) - (a.connectionCount ?? 0));
+  const activeBudget = budget ?? createRequestBudget(Math.max(8, ordered.length * 2));
+  const pairs = (await Promise.all(ordered.map(async (block) => {
+    try {
+      const response = await getBlockConnections(block.id, activeBudget);
       block.connectionCount = response.total;
       return [block.id, response.channels] as const;
-    }));
-    const complete: LookupResult = { ...result, blocks: [...result.blocks], connections: Object.fromEntries(pairs) };
+    } catch {
+      return null;
+    }
+  }))).filter((pair): pair is readonly [number, ArenaChannel[]] => pair !== null);
+  const completeConnections: Record<number, ArenaChannel[]> = {
+    ...existingConnections,
+    ...Object.fromEntries(pairs),
+  };
+  const complete: LookupResult = {
+    ...result,
+    blocks: [...result.blocks],
+    connections: completeConnections,
+  };
+  try {
     await putCached(complete);
-    await recordLookup(pairs.some(([, channels]) => channels.length > 0));
-    return complete;
-  } catch (error) {
-    return { ...result, status: statusForError(error), fetchedAt: Date.now() };
+  } catch {
+    // Cache writes are best-effort after a successful lookup.
   }
+  try {
+    await recordLookup(Object.values(completeConnections).some((channels) => channels.length > 0));
+  } catch {
+    // Lookup bookkeeping must not invalidate a usable result.
+  }
+  return complete;
 };
