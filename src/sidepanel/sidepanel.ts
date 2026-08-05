@@ -124,13 +124,15 @@ const connectionCount = (block: ArenaBlock): string | null => {
 
 const metadata = (block: ArenaBlock): HTMLElement => {
   const row = element('span', 'block-metadata');
-  const creator = element('span', 'metadata-item metadata-creator');
-  creator.append(creatorAvatar(block), element('span', undefined, block.userName || block.userSlug || 'Are.na user'));
-  row.append(creator);
+  const content = element('span', 'metadata-content');
+  content.append(element('span', 'metadata-creator', block.userName || block.userSlug || 'Are.na user'));
+  const details = element('span', 'metadata-details');
   const date = formatBlockCreatedDate(block.createdAt);
-  if (date) row.append(element('span', 'metadata-item metadata-muted', date));
+  if (date) details.append(element('span', 'metadata-item metadata-muted', date));
   const count = connectionCount(block);
-  if (count) row.append(element('span', 'metadata-item metadata-muted', count));
+  if (count) details.append(element('span', 'metadata-item metadata-muted', count));
+  if (details.childElementCount) content.append(details);
+  row.append(creatorAvatar(block), content);
   return row;
 };
 

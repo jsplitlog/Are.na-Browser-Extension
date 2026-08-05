@@ -42,5 +42,7 @@ describe('side panel release contract', () => {
     expect(sidepanelSource).toContain("channel?.status === 'open'");
     expect(sidepanelSource).toContain("channel?.status === 'public'");
     expect(sidepanelStyles).toContain('--arena-channel-open: #17ac10');
+    expect(sidepanelSource).toContain("'metadata-content'");
+    expect(sidepanelSource).toContain("'metadata-details'");
   });
 });
