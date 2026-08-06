@@ -44,22 +44,6 @@ from the extension. You can fully revoke access from Are.na's
 Return to the page you want to check and click the extension button. The Are.na
 Connections side panel will open with the matching blocks.
 
-Signing out removes local access from the extension. To revoke it completely,
-use Are.na's Authorized Apps page.
-
-## OAuth configuration
-
-The committed manifest key pins the development extension ID to
-`poolkoglmiobmahcbamkbhljhgeooajm`. Do not replace it casually: the registered
-OAuth callback and existing Chrome installation data depend on that ID.
-
-The extension uses Authorization Code + PKCE with the `read` scope and the
-callback below. It does not ship or use an OAuth client secret.
-
-```text
-https://poolkoglmiobmahcbamkbhljhgeooajm.chromiumapp.org/oauth2
-```
-
 ## Build from source
 
 Building is optional and only needed when changing the extension. It requires

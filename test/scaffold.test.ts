@@ -18,8 +18,9 @@ describe('distribution scaffold', () => {
     expect(readme).toContain('dist');
     expect(readme).toContain('Build from source');
     expect(readme).toContain('Sign in with Are.na ✶✶');
-    expect(readme).toContain('Authorization Code + PKCE');
     expect(readme).toContain('https://www.are.na/developers/oauth/authorized');
+    expect(readme).not.toContain('OAuth configuration');
+    expect(readme).not.toContain('chromiumapp.org');
     expect(readme).not.toContain('personal access token');
     expect(readme).not.toContain('Use token');
   });
@@ -28,12 +29,11 @@ describe('distribution scaffold', () => {
     expect(distributionManifest).toEqual(sourceManifest);
   });
 
-  it('pins the OAuth callback to the registered development extension ID', () => {
+  it('pins the registered development extension ID', () => {
     expect(typeof sourceManifest.key).toBe('string');
     const digest = createHash('sha256').update(Buffer.from(sourceManifest.key as string, 'base64')).digest('hex').slice(0, 32);
     const extensionId = [...digest].map((digit) => String.fromCharCode('a'.charCodeAt(0) + Number.parseInt(digit, 16))).join('');
 
     expect(extensionId).toBe('poolkoglmiobmahcbamkbhljhgeooajm');
-    expect(readme).toContain(`https://${extensionId}.chromiumapp.org/oauth2`);
   });
 });

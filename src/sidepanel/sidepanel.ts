@@ -110,7 +110,7 @@ const renderSignIn = (errorMessage = ''): void => {
   const copy = element('div', 'auth-card-copy');
   copy.append(
     element('h1', 'auth-title', 'Are.na Connections'),
-    element('p', 'auth-description', 'See where this page connects on Are.na.'),
+    element('p', 'auth-description', 'Explore Are.na connections from any page.'),
   );
 
   const button = element('button', 'auth-primary', 'Sign in with Are.na ✶✶');
