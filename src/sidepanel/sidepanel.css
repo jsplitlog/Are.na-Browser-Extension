@@ -208,6 +208,16 @@ button { font: inherit; }
 .block-copy.channel-open:hover,
 .block-copy.channel-open:active { background: var(--arena-channel-open-active-background); }
 
+.block-copy.channel-closed { background: var(--arena-channel-closed-background); }
+
+.block-copy.channel-closed:hover,
+.block-copy.channel-closed:active { background: var(--arena-channel-closed-active-background); }
+
+.block-copy.channel-private { background: var(--arena-channel-private-background); }
+
+.block-copy.channel-private:hover,
+.block-copy.channel-private:active { background: var(--arena-channel-private-active-background); }
+
 .channel-title {
   color: var(--arena-black);
   display: block;
@@ -219,6 +229,8 @@ button { font: inherit; }
 }
 
 .block-copy.channel-open .channel-title { color: var(--arena-channel-open); }
+.block-copy.channel-closed .channel-title { color: var(--arena-channel-closed); }
+.block-copy.channel-private .channel-title { color: var(--arena-channel-private); }
 
 .block-metadata {
   align-items: center;

@@ -13,6 +13,12 @@
   --arena-channel-open: #17ac10;
   --arena-channel-open-background: rgb(23 172 16 / 2.5%);
   --arena-channel-open-active-background: rgb(23 172 16 / 7%);
+  --arena-channel-closed: #4b3d67;
+  --arena-channel-closed-background: rgb(75 61 103 / 2.5%);
+  --arena-channel-closed-active-background: rgb(75 61 103 / 7%);
+  --arena-channel-private: #b60202;
+  --arena-channel-private-background: rgb(182 2 2 / 2.5%);
+  --arena-channel-private-active-background: rgb(182 2 2 / 7%);
 
   --arena-radius: 0.25rem;
   --arena-space-1: 4px;
@@ -58,5 +64,11 @@
     --arena-channel-open: #2ba425;
     --arena-channel-open-background: rgb(43 164 37 / 10%);
     --arena-channel-open-active-background: rgb(43 164 37 / 16%);
+    --arena-channel-closed: #d3d3d3;
+    --arena-channel-closed-background: rgb(211 211 211 / 7%);
+    --arena-channel-closed-active-background: rgb(211 211 211 / 12%);
+    --arena-channel-private: #e24937;
+    --arena-channel-private-background: rgb(226 73 55 / 10%);
+    --arena-channel-private-active-background: rgb(226 73 55 / 16%);
   }
 }

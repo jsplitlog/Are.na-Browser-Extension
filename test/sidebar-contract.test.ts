@@ -43,6 +43,8 @@ describe('side panel release contract', () => {
     expect(themeStyles).toContain('--arena-line: #2f2f2f');
     expect(themeStyles).toContain('--arena-blue: #17b0e2');
     expect(themeStyles).toContain('--arena-channel-open: #2ba425');
+    expect(themeStyles).toContain('--arena-channel-closed: #d3d3d3');
+    expect(themeStyles).toContain('--arena-channel-private: #e24937');
   });
 
   it('shares the Reader design tokens with the sidebar', () => {
@@ -83,9 +85,16 @@ describe('side panel release contract', () => {
     expect(sidepanelSource).not.toMatch(/copy'\s*:\s*'copies/);
     expect(sidepanelSource).toContain("'channel-title'");
     expect(sidepanelSource).toContain("'Loading connections…'");
-    expect(sidepanelSource).toContain("channel?.visibility === 'open'");
-    expect(sidepanelSource).toContain("channel?.visibility === 'public'");
+    expect(sidepanelSource).toContain("case 'open':");
+    expect(sidepanelSource).toContain("case 'public':");
+    expect(sidepanelSource).toContain("case 'closed':");
+    expect(sidepanelSource).toContain("case 'private':");
+    expect(sidepanelSource).toContain("return 'channel-private'");
     expect(themeStyles).toContain('--arena-channel-open: #17ac10');
+    expect(themeStyles).toContain('--arena-channel-closed: #4b3d67');
+    expect(themeStyles).toContain('--arena-channel-private: #b60202');
+    expect(sidepanelStyles).toContain('.block-copy.channel-closed');
+    expect(sidepanelStyles).toContain('.block-copy.channel-private');
     expect(sidepanelSource).toContain("'metadata-content'");
     expect(sidepanelSource).toContain("'metadata-details'");
     expect(sidepanelSource).not.toContain('renderDetail');

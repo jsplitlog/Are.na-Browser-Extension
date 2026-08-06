@@ -209,8 +209,19 @@ const metadata = (block: ArenaBlock, channelTitle: string): HTMLElement => {
   return row;
 };
 
-const isOpenChannel = (channel?: ArenaChannel): boolean =>
-  channel?.visibility === 'open' || channel?.visibility === 'public';
+const channelPaletteClass = (channel?: ArenaChannel): string | null => {
+  switch (channel?.visibility?.toLowerCase()) {
+    case 'open':
+    case 'public':
+      return 'channel-open';
+    case 'closed':
+      return 'channel-closed';
+    case 'private':
+      return 'channel-private';
+    default:
+      return null;
+  }
+};
 
 const originatingChannelTitle = (channels?: ArenaChannel[]): string => {
   if (channels === undefined) return connectionsLoaded ? 'Channel unavailable' : 'Loading channel…';
@@ -331,7 +342,8 @@ const renderMaster = (preserveScroll = false): void => {
     copy.href = `https://www.are.na/block/${encodeURIComponent(String(block.id))}`;
     copy.target = '_blank';
     copy.rel = 'noopener';
-    if (isOpenChannel(channel)) copy.classList.add('channel-open');
+    const paletteClass = channelPaletteClass(channel);
+    if (paletteClass) copy.classList.add(paletteClass);
     copy.append(metadata(block, originatingChannelTitle(channels)));
     item.append(copy);
     list.append(item);
