@@ -3,16 +3,28 @@ import { clearCache, getCached, putCached } from '../src/core/cache';
 import type { LookupResult } from '../src/core/types';
 
 const values: Record<string, unknown> = {};
+let fullScans = 0;
 const get = async (keys?: string | string[] | null) => {
-  if (keys === null || keys === undefined) return { ...values };
+  if (keys === null || keys === undefined) {
+    fullScans += 1;
+    return { ...values };
+  }
   const list = Array.isArray(keys) ? keys : [keys];
   return Object.fromEntries(list.filter((key) => key in values).map((key) => [key, values[key]]));
 };
+const bytesOf = (key: string) =>
+  new TextEncoder().encode(key).byteLength + new TextEncoder().encode(JSON.stringify(values[key])).byteLength;
+const getBytesInUse = async (keys?: string | string[] | null) => {
+  const list = keys === null || keys === undefined ? Object.keys(values) : Array.isArray(keys) ? keys : [keys];
+  return list.filter((key) => key in values).reduce((total, key) => total + bytesOf(key), 0);
+};
+const entryKeys = () => Object.keys(values).filter((key) => key.startsWith('arena-cache:v4:'));
 
 beforeEach(() => {
   for (const key of Object.keys(values)) delete values[key];
+  fullScans = 0;
   (globalThis as { chrome: unknown }).chrome = {
-    storage: { local: { get, set: async (items: Record<string, unknown>) => Object.assign(values, items), remove: async (keys: string | string[]) => { for (const key of Array.isArray(keys) ? keys : [keys]) delete values[key]; } } },
+    storage: { local: { get, getBytesInUse, set: async (items: Record<string, unknown>) => Object.assign(values, items), remove: async (keys: string | string[]) => { for (const key of Array.isArray(keys) ? keys : [keys]) delete values[key]; } } },
   };
 });
 
@@ -61,7 +73,35 @@ describe('cache', () => {
     await putCached({ normalizedUrl: 'example.com/new', status: 'hit', blocks: [], fetchedAt: now });
     expect(values['arena-cache:v4:example.com/0']).toBeUndefined();
     expect(values['arena-cache:v4:example.com/new']).toBeDefined();
-    expect(Object.keys(values)).toHaveLength(2000);
+    expect(entryKeys()).toHaveLength(2000);
+  });
+
+  it('still evicts at the entry cap once the tracked entry count is warm', async () => {
+    const now = Date.now();
+    for (let index = 0; index < 2000; index += 1) {
+      values[`arena-cache:v4:example.com/${index}`] = {
+        result: { normalizedUrl: `example.com/${index}`, status: 'hit', blocks: [], fetchedAt: now },
+        accessedAt: index,
+      };
+    }
+    values['arena-cache:count:v4'] = { count: 2000 };
+
+    await putCached(result('hit', now));
+
+    expect(values['arena-cache:v4:example.com/0']).toBeUndefined();
+    expect(values['arena-cache:v4:example.com/a']).toBeDefined();
+    expect(entryKeys()).toHaveLength(2000);
+  });
+
+  it('writes without rescanning the whole cache while it is far from its limits', async () => {
+    await putCached(result('hit'));
+    expect(fullScans).toBe(1);
+
+    await putCached({ normalizedUrl: 'example.com/b', status: 'hit', blocks: [], fetchedAt: Date.now() });
+    await putCached(result('miss'));
+
+    expect(fullScans).toBe(1);
+    expect(entryKeys()).toHaveLength(2);
   });
 
   it('evicts old entries before Chrome local-storage byte quota is approached', async () => {

@@ -2,7 +2,7 @@ import { getAuthState, signInWithOAuth, signOut } from '../core/auth';
 import { ACTIVE_PAGE_KEY, type ActivePageRequest } from '../core/active-page';
 import { createRequestBudget } from '../core/arena';
 import { getCached } from '../core/cache';
-import type { Request, Response } from '../core/messages';
+import { isRequest, type Request, type Response } from '../core/messages';
 import { blocksFor, connectionsFor } from '../core/resolve';
 import type { LookupResult } from '../core/types';
 
@@ -64,8 +64,11 @@ const route = async (request: Request): Promise<Response> => {
 };
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
-  const request = message as Request;
-  void route(request)
+  if (!isRequest(message)) {
+    sendResponse({ kind: 'error', message: 'Unsupported request.' } satisfies Response);
+    return true;
+  }
+  void route(message)
     .then(sendResponse)
     .catch((error: unknown) => sendResponse({
       kind: 'error',

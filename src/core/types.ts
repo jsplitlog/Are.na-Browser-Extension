@@ -1,5 +1,5 @@
 export type LookupStatus =
-  | 'hit' | 'miss' | 'skipped' | 'unauthenticated' | 'not_premium' | 'error';
+  | 'hit' | 'miss' | 'skipped' | 'unauthenticated' | 'not_premium' | 'rate_limited' | 'error';
 
 export interface ArenaBlock {
   id: number;

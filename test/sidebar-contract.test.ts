@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { isRequest } from '../src/core/messages';
 
 const root = resolve(import.meta.dirname, '..');
 const manifest = JSON.parse(readFileSync(resolve(root, 'public/manifest.json'), 'utf8')) as {
@@ -11,6 +12,7 @@ const manifest = JSON.parse(readFileSync(resolve(root, 'public/manifest.json'), 
   side_panel?: { default_path?: string };
 };
 const sidepanelSource = readFileSync(resolve(root, 'src/sidepanel/sidepanel.ts'), 'utf8');
+const serviceWorkerSource = readFileSync(resolve(root, 'src/background/service-worker.ts'), 'utf8');
 const sidepanelStyles = readFileSync(resolve(root, 'src/sidepanel/sidepanel.css'), 'utf8');
 const sidepanelHtml = readFileSync(resolve(root, 'src/sidepanel/sidepanel.html'), 'utf8');
 const themeStyles = readFileSync(resolve(root, 'src/styles/arena-theme.css'), 'utf8');
@@ -106,5 +108,38 @@ describe('side panel release contract', () => {
     expect(sidepanelSource).toContain('`${connectionSummary.count}+ connections`');
     expect(sidepanelSource).toContain("'result-metadata'");
     expect(sidepanelSource).toContain('formatOldestBlockAge(result.blocks)');
+  });
+
+  it('tells rate limiting apart from an unreachable Are.na', () => {
+    expect(sidepanelSource).toContain("case 'rate_limited':");
+    expect(sidepanelSource).toContain("'Are.na is rate limiting.'");
+    expect(sidepanelSource).toContain("'Wait a moment and click the toolbar button again.'");
+    expect(sidepanelSource).toContain("'Couldn’t reach Are.na.'");
+  });
+});
+
+describe('background message contract', () => {
+  it('accepts every request the side panel sends', () => {
+    expect(isRequest({ kind: 'lookup', url: 'https://example.com/a' })).toBe(true);
+    expect(isRequest({ kind: 'getConnections', normalizedUrl: 'example.com/a' })).toBe(true);
+    expect(isRequest({ kind: 'getAuthState' })).toBe(true);
+    expect(isRequest({ kind: 'signIn', remember: false })).toBe(true);
+    expect(isRequest({ kind: 'signOut' })).toBe(true);
+  });
+
+  it('rejects unknown kinds and malformed payloads', () => {
+    expect(isRequest(undefined)).toBe(false);
+    expect(isRequest('lookup')).toBe(false);
+    expect(isRequest({})).toBe(false);
+    expect(isRequest({ kind: 'evaluate', code: 'alert(1)' })).toBe(false);
+    expect(isRequest({ kind: 'lookup' })).toBe(false);
+    expect(isRequest({ kind: 'lookup', url: 42 })).toBe(false);
+    expect(isRequest({ kind: 'getConnections', normalizedUrl: null })).toBe(false);
+    expect(isRequest({ kind: 'signIn', remember: 'yes' })).toBe(false);
+  });
+
+  it('answers unvalidated messages with an error instead of routing them', () => {
+    expect(serviceWorkerSource).toContain('if (!isRequest(message))');
+    expect(serviceWorkerSource).not.toContain('message as Request');
   });
 });

@@ -9,6 +9,9 @@ const MAX_ENTRIES = 2000;
 // chrome.storage.local is limited to 10 MB without unlimitedStorage. Keep a
 // margin for credentials and settings instead of relying on entry count alone.
 const MAX_CACHE_BYTES = 8 * 1024 * 1024;
+// Entry count is the one limit chrome.storage cannot report cheaply, so it is
+// tracked alongside the entries. A missing or stale count only costs a rescan.
+const COUNT_KEY = `${CACHE_NAMESPACE}count:v4`;
 
 interface CacheEntry { result: LookupResult; accessedAt: number }
 const keyFor = (normalizedUrl: string) => `${PREFIX}${normalizedUrl}`;
@@ -43,15 +46,26 @@ export const getCached = async (normalizedUrl: string): Promise<LookupResult | n
   return value.result;
 };
 
-export const putCached = async (result: LookupResult): Promise<void> => {
-  if (result.status !== 'hit' && result.status !== 'miss') return;
+const storedCount = (value: unknown): number | null => {
+  const count = (value as { count?: unknown } | undefined)?.count;
+  return typeof count === 'number' && count >= 0 ? count : null;
+};
+
+const bytesInUse = async (): Promise<number | null> => {
+  try {
+    return await storage().getBytesInUse(null);
+  } catch {
+    return null;
+  }
+};
+
+/** Full scan: the only path that re-serializes the cache, so it also repairs the count. */
+const evictAndSet = async (key: string, entry: CacheEntry): Promise<void> => {
   const all = await storage().get(null);
-  const key = keyFor(result.normalizedUrl);
-  const entry = { result, accessedAt: Date.now() } satisfies CacheEntry;
   const invalidKeys: string[] = [];
   const entries: Array<[string, CacheEntry]> = [];
   for (const [storedKey, value] of Object.entries(all)) {
-    if (!storedKey.startsWith(CACHE_NAMESPACE) || storedKey === key) continue;
+    if (!storedKey.startsWith(CACHE_NAMESPACE) || storedKey === key || storedKey === COUNT_KEY) continue;
     if (!storedKey.startsWith(PREFIX)) {
       invalidKeys.push(storedKey);
       continue;
@@ -73,7 +87,25 @@ export const putCached = async (result: LookupResult): Promise<void> => {
     keysToRemove.push(oldest[0]);
   }
   if (keysToRemove.length) await storage().remove(keysToRemove);
-  await storage().set({ [key]: entry });
+  await storage().set({ [key]: entry, [COUNT_KEY]: { count: entries.length + 1 } });
+};
+
+export const putCached = async (result: LookupResult): Promise<void> => {
+  if (result.status !== 'hit' && result.status !== 'miss') return;
+  const key = keyFor(result.normalizedUrl);
+  const entry = { result, accessedAt: Date.now() } satisfies CacheEntry;
+  const known = await storage().get([key, COUNT_KEY]);
+  const count = storedCount(known[COUNT_KEY]);
+  const nextCount = (count ?? 0) + (key in known ? 0 : 1);
+  const bytes = await bytesInUse();
+  // A scan re-serializes every cached entry, so only pay for it when the cheap
+  // counters say this write could cross a limit.
+  if (count === null || bytes === null ||
+    nextCount > MAX_ENTRIES || bytes + storedBytes(key, entry) > MAX_CACHE_BYTES) {
+    await evictAndSet(key, entry);
+    return;
+  }
+  await storage().set({ [key]: entry, [COUNT_KEY]: { count: nextCount } });
 };
 
 /** Removes only this extension's lookup cache, leaving auth and preferences intact. */
