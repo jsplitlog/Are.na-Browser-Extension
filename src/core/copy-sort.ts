@@ -3,9 +3,21 @@ import type { ArenaBlock, ArenaChannel } from './types';
 export type CopySort = 'most-connections' | 'least-connections' | 'newest' | 'oldest';
 export type CopySortAxis = 'connections' | 'date';
 
+export interface ConnectionCountSummary {
+  count: number;
+  complete: boolean;
+  known: number;
+}
+
+export const summarizeConnectionCounts = (blocks: ArenaBlock[]): ConnectionCountSummary => ({
+  count: blocks.reduce((total, { connectionCount }) => total + (connectionCount ?? 0), 0),
+  complete: blocks.every(({ connectionCount }) => connectionCount !== null),
+  known: blocks.filter(({ connectionCount }) => connectionCount !== null).length,
+});
+
 export const totalConnectionCount = (blocks: ArenaBlock[]): number | null => {
-  if (blocks.some(({ connectionCount }) => connectionCount === null)) return null;
-  return blocks.reduce((total, { connectionCount }) => total + (connectionCount ?? 0), 0);
+  const summary = summarizeConnectionCounts(blocks);
+  return summary.complete ? summary.count : null;
 };
 
 export const nextCopySort = (current: CopySort, axis: CopySortAxis): CopySort => {

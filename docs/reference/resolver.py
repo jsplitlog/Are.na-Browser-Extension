@@ -20,7 +20,7 @@ rate limiting and will mislead you — it cost a wrong finding during planning
 """
 import json, os, re, sys, urllib.parse, urllib.request
 
-UA = 'arena-connections-ext/0.1'
+UA = 'arena-connections/0.1'
 
 TRACKING = re.compile(r'^(utm_\w*|fbclid|gclid|mc_cid|mc_eid|igshid|ref|ref_src|source|_hsenc)$')
 # Path segments that carry no identifying signal and actively over-constrain the query.

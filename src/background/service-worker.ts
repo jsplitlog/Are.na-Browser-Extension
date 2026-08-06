@@ -55,7 +55,7 @@ const route = async (request: Request): Promise<Response> => {
       return { kind: 'authState', ...state };
     }
     case 'signIn':
-      await signInWithOAuth(false);
+      await signInWithOAuth(request.remember);
       return { kind: 'ok' };
     case 'signOut':
       await signOut();
@@ -67,7 +67,10 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
   const request = message as Request;
   void route(request)
     .then(sendResponse)
-    .catch(() => sendResponse({ kind: 'result', result: errorResult('') } satisfies Response));
+    .catch((error: unknown) => sendResponse({
+      kind: 'error',
+      message: error instanceof Error ? error.message : 'Could not complete the request.',
+    } satisfies Response));
   return true;
 });
 

@@ -1,7 +1,7 @@
 import './sidepanel.css';
 import { ACTIVE_PAGE_KEY, isActivePageRequest } from '../core/active-page';
 import { formatBlockCreatedDate, formatOldestBlockAge } from '../core/block-date';
-import { nextCopySort, sortBlocks, totalConnectionCount, type CopySort } from '../core/copy-sort';
+import { nextCopySort, sortBlocks, summarizeConnectionCounts, type CopySort } from '../core/copy-sort';
 import type { Request, Response } from '../core/messages';
 import type { ArenaBlock, ArenaChannel, LookupResult } from '../core/types';
 
@@ -14,6 +14,7 @@ let currentSort: CopySort = 'most-connections';
 let requestGeneration = 0;
 let latestRequestedAt = -1;
 let latestRequestUrl = '';
+const SOURCE_URL = 'https://github.com/jsplitlog/arena-connections';
 
 const element = <K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -38,10 +39,44 @@ const visibleUrl = (normalizedUrl: string): string => {
   }
 };
 
-const settingsButton = (): HTMLButtonElement => {
-  const button = element('button', 'settings-button', 'Settings');
+const githubIcon = (): SVGSVGElement => {
+  const namespace = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(namespace, 'svg');
+  svg.classList.add('auth-icon');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('aria-hidden', 'true');
+  const crown = document.createElementNS(namespace, 'path');
+  crown.setAttribute('d', 'M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4');
+  const branch = document.createElementNS(namespace, 'path');
+  branch.setAttribute('d', 'M9 18c-4.51 2-5-2-7-2');
+  svg.append(crown, branch);
+  return svg;
+};
+
+const logOutButton = (): HTMLButtonElement => {
+  const button = element('button', 'log-out-button', 'Log out');
   button.type = 'button';
-  button.addEventListener('click', () => void chrome.runtime.openOptionsPage());
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      const response = await send({ kind: 'signOut' });
+      if (response.kind === 'error') throw new Error(response.message);
+      if (response.kind !== 'ok') throw new Error('Could not log out.');
+      ++requestGeneration;
+      currentResult = null;
+      currentConnections = {};
+      connectionsLoaded = false;
+      renderSignIn();
+    } catch {
+      button.disabled = false;
+      button.textContent = 'Try log out again';
+    }
+  });
   return button;
 };
 
@@ -61,7 +96,7 @@ const renderState = (
   state.append(element('h1', 'state-title', title));
   if (detail) state.append(element('p', 'state-detail', detail));
   if (action) state.append(action);
-  if (!action) state.append(settingsButton());
+  if (!action) state.append(logOutButton());
   replaceApp(state);
 };
 
@@ -69,17 +104,58 @@ const renderIdle = (): void => {
   renderState('No page selected.', 'Click the toolbar button to check this page.');
 };
 
-const signInAction = (): HTMLButtonElement => {
-  const button = element('button', 'primary-button', 'Open settings');
+const renderSignIn = (errorMessage = ''): void => {
+  const view = element('section', 'auth-view');
+  const card = element('div', 'auth-card');
+  const copy = element('div', 'auth-card-copy');
+  copy.append(
+    element('h1', 'auth-title', 'Are.na Connections'),
+    element('p', 'auth-description', 'See where this page connects on Are.na.'),
+  );
+
+  const button = element('button', 'auth-primary', 'Sign in with Are.na ✶✶');
   button.type = 'button';
-  button.addEventListener('click', () => void chrome.runtime.openOptionsPage());
-  return button;
+  const message = element('p', 'auth-message', errorMessage);
+  message.setAttribute('role', 'alert');
+  message.setAttribute('aria-live', 'polite');
+
+  const footer = element('div', 'auth-footer');
+  const remember = element('label', 'auth-remember');
+  const checkbox = element('input');
+  checkbox.type = 'checkbox';
+  remember.append(checkbox, document.createTextNode('Remember device'));
+  const source = element('a', 'auth-link');
+  source.href = SOURCE_URL;
+  source.target = '_blank';
+  source.rel = 'noopener';
+  source.append(githubIcon(), document.createTextNode('View source'));
+  footer.append(remember, source);
+
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    button.textContent = 'Connecting…';
+    message.textContent = '';
+    try {
+      const response = await send({ kind: 'signIn', remember: checkbox.checked });
+      if (response.kind === 'error') throw new Error(response.message);
+      if (response.kind !== 'ok') throw new Error('Could not sign in with Are.na.');
+      if (latestRequestUrl) await startLookup(latestRequestUrl);
+      else renderIdle();
+    } catch (error) {
+      renderSignIn(error instanceof Error ? error.message : 'Could not sign in with Are.na.');
+    }
+  });
+
+  card.append(copy, button, message, footer);
+  view.append(card);
+  replaceApp(view);
+  requestAnimationFrame(() => button.focus());
 };
 
 const renderLookupStatus = (result: LookupResult): void => {
   switch (result.status) {
     case 'unauthenticated':
-      renderState('Sign in required.', undefined, signInAction());
+      renderSignIn();
       break;
     case 'not_premium':
       renderState('Premium required.', 'Are.na search requires Premium.');
@@ -134,11 +210,31 @@ const metadata = (block: ArenaBlock, channelTitle: string): HTMLElement => {
 };
 
 const isOpenChannel = (channel?: ArenaChannel): boolean =>
-  channel?.status === 'open' || channel?.status === 'public';
+  channel?.visibility === 'open' || channel?.visibility === 'public';
 
 const originatingChannelTitle = (channels?: ArenaChannel[]): string => {
   if (channels === undefined) return connectionsLoaded ? 'Channel unavailable' : 'Loading channel…';
   return channels[0]?.title || 'Channel unavailable';
+};
+
+const sortChevron = (direction: 'ascending' | 'descending'): SVGSVGElement => {
+  const namespace = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(namespace, 'svg');
+  svg.classList.add('sort-chevron');
+  svg.setAttribute('width', '14');
+  svg.setAttribute('height', '14');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('aria-hidden', 'true');
+
+  const path = document.createElementNS(namespace, 'path');
+  path.setAttribute('d', direction === 'descending' ? 'm18 15-6-6-6 6' : 'm6 9 6 6 6-6');
+  svg.append(path);
+  return svg;
 };
 
 const sortControl = (selected: CopySort, onChange: (sort: CopySort) => void): HTMLDivElement => {
@@ -161,6 +257,7 @@ const sortControl = (selected: CopySort, onChange: (sort: CopySort) => void): HT
       ? `Connections, ${connectionsDirection === 'descending' ? 'most' : 'least'} first. Reverse order.`
       : 'Sort by connections, most first.',
   );
+  if (connectionsActive) connections.append(sortChevron(connectionsDirection));
   connections.addEventListener('click', () => {
     onChange(nextCopySort(selected, 'connections'));
   });
@@ -176,6 +273,7 @@ const sortControl = (selected: CopySort, onChange: (sort: CopySort) => void): HT
       ? `Date, ${dateDirection === 'descending' ? 'newest' : 'oldest'} first. Reverse order.`
       : 'Sort by date, newest first.',
   );
+  if (dateActive) date.append(sortChevron(dateDirection));
   date.addEventListener('click', () => {
     onChange(nextCopySort(selected, 'date'));
   });
@@ -187,21 +285,22 @@ const sortControl = (selected: CopySort, onChange: (sort: CopySort) => void): HT
 const resultContext = (result: LookupResult): HTMLElement => {
   const context = element('section', 'result-context');
   const blockCount = result.blocks.length;
-  const connectionCount = totalConnectionCount(result.blocks);
+  const connectionSummary = summarizeConnectionCounts(result.blocks);
   const blockAge = formatOldestBlockAge(result.blocks);
   const totals = element('div', 'result-metadata');
+  const connectionLabel = connectionSummary.complete
+    ? `${connectionSummary.count} ${connectionSummary.count === 1 ? 'connection' : 'connections'}`
+    : !connectionsLoaded
+      ? 'Loading connections…'
+      : connectionSummary.known > 0
+        ? `${connectionSummary.count}+ connections`
+        : 'Connections unavailable';
   totals.append(
     element('span', 'result-total', `${blockCount} ${blockCount === 1 ? 'block' : 'blocks'}`),
-    element(
-      'span',
-      'result-total',
-      connectionCount === null
-        ? connectionsLoaded ? 'Connections unavailable' : 'Loading connections…'
-        : `${connectionCount} ${connectionCount === 1 ? 'connection' : 'connections'}`,
-    ),
+    element('span', 'result-total', connectionLabel),
   );
   if (blockAge) totals.append(element('span', 'result-total', blockAge));
-  totals.append(settingsButton());
+  totals.append(logOutButton());
   context.append(element('h1', 'result-title', visibleUrl(result.normalizedUrl)), totals);
   return context;
 };
@@ -245,12 +344,25 @@ const renderMaster = (preserveScroll = false): void => {
 
 const startLookup = async (url: string): Promise<void> => {
   const generation = ++requestGeneration;
-  currentResult = null;
-  currentConnections = {};
-  connectionsLoaded = false;
-  renderState('Looking up page…', undefined, undefined, true);
 
   try {
+    const auth = await send({ kind: 'getAuthState' });
+    if (generation !== requestGeneration) return;
+    if (auth.kind === 'error') throw new Error(auth.message);
+    if (auth.kind !== 'authState') throw new Error('Unexpected account response');
+    if (!auth.signedIn) {
+      currentResult = null;
+      currentConnections = {};
+      connectionsLoaded = false;
+      renderSignIn();
+      return;
+    }
+
+    currentResult = null;
+    currentConnections = {};
+    connectionsLoaded = false;
+    renderState('Looking up page…', undefined, undefined, true);
+
     const phaseOne = await send({ kind: 'lookup', url });
     if (generation !== requestGeneration) return;
     if (phaseOne.kind !== 'result') throw new Error('Unexpected lookup response');
@@ -314,10 +426,25 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 });
 
 const initialize = async (): Promise<void> => {
-  renderIdle();
   try {
-    const stored = await chrome.storage.session.get(ACTIVE_PAGE_KEY);
-    handleActivePage(stored[ACTIVE_PAGE_KEY]);
+    const [stored, auth] = await Promise.all([
+      chrome.storage.session.get(ACTIVE_PAGE_KEY),
+      send({ kind: 'getAuthState' }),
+    ]);
+    const activePage = stored[ACTIVE_PAGE_KEY];
+    if (auth.kind === 'authState' && !auth.signedIn) {
+      if (isActivePageRequest(activePage)) {
+        latestRequestedAt = activePage.requestedAt;
+        latestRequestUrl = activePage.url;
+      }
+      renderSignIn();
+      return;
+    }
+    if (isActivePageRequest(activePage)) {
+      handleActivePage(activePage);
+      return;
+    }
+    renderIdle();
   } catch {
     renderIdle();
   }

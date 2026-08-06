@@ -72,7 +72,7 @@ describe('arena API', () => {
     await expect(searchBlocks('https://example.com/a', createRequestBudget(0))).rejects.toMatchObject({ kind: 'network' } satisfies Partial<ArenaError>);
   });
 
-  it.each([403, 429])('retries and surfaces HTTP %s as an error, never a miss', async (status) => {
+  it.each([403, 408, 429])('retries and surfaces HTTP %s as an error, never a miss', async (status) => {
     const fetchMock = vi.fn().mockResolvedValue(json({}, status));
     vi.stubGlobal('fetch', fetchMock);
     buildQueries.mockReturnValueOnce(['specific query']);
@@ -85,17 +85,20 @@ describe('arena API', () => {
 
   it('requests only the oldest connection and preserves the total connection count', async () => {
     const fetchMock = vi.fn().mockResolvedValue(json({ data: [
-      { id: 9, slug: 'original', title: 'Original', owner: { slug: 'owner-one', full_name: 'One' }, user: { slug: 'wrong' } },
+      { id: 9, slug: 'original', title: 'Original', visibility: 'public', status: 'closed', owner: { slug: 'owner-one', full_name: 'One' }, user: { slug: 'wrong' } },
     ], meta: { total_count: 14 } }));
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(getBlockConnections(42)).resolves.toEqual({ channels: [
-      expect.objectContaining({ slug: 'original', ownerSlug: 'owner-one', webUrl: 'https://www.are.na/owner-one/original' }),
+      expect.objectContaining({ slug: 'original', ownerSlug: 'owner-one', visibility: 'public', webUrl: 'https://www.are.na/owner-one/original' }),
     ], total: 14 });
 
     const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0]));
     expect(requestUrl.pathname).toBe('/v3/blocks/42/connections');
     expect(Object.fromEntries(requestUrl.searchParams)).toEqual({ per: '1', sort: 'created_at_asc' });
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      headers: expect.objectContaining({ Authorization: 'Bearer token' }),
+    });
   });
 
   it('falls back to the returned original channel when connection count metadata is absent', async () => {

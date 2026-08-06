@@ -1,4 +1,5 @@
 @import '../styles/arena-theme.css';
+@import '../styles/auth-card.css';
 
 :root {
   --panel-gutter: var(--arena-gutter);
@@ -33,7 +34,7 @@ a { -webkit-tap-highlight-color: transparent; }
 
 button { font: inherit; }
 
-.settings-button {
+.log-out-button {
   appearance: none;
   background: transparent;
   border: 0;
@@ -45,20 +46,21 @@ button { font: inherit; }
   padding: var(--arena-space-2);
 }
 
-.settings-button {
+.log-out-button {
   color: var(--arena-muted);
   font-size: var(--arena-text-small);
   padding: var(--arena-space-1);
 }
 
-.settings-button:hover { background: var(--arena-soft); color: var(--arena-black); }
+.log-out-button:hover { background: var(--arena-soft); color: var(--arena-black); }
+.log-out-button:disabled { cursor: wait; opacity: 0.55; }
 
 .state {
   margin: 0;
   padding: var(--arena-space-8) var(--panel-gutter);
 }
 
-.state > .settings-button { margin: var(--arena-space-4) 0 0 calc(-1 * var(--arena-space-1)); }
+.state > .log-out-button { margin: var(--arena-space-4) 0 0 calc(-1 * var(--arena-space-1)); }
 
 .state-title,
 .result-title {
@@ -119,7 +121,7 @@ button { font: inherit; }
 
 .result-total { white-space: nowrap; }
 
-.result-metadata .settings-button {
+.result-metadata .log-out-button {
   margin: calc(-1 * var(--arena-space-1)) calc(-1 * var(--arena-space-1)) calc(-1 * var(--arena-space-1)) auto;
 }
 
@@ -163,20 +165,11 @@ button { font: inherit; }
   color: var(--arena-black);
 }
 
-.sort-button[aria-pressed="true"]::after {
-  border-bottom: 1.5px solid currentColor;
-  border-right: 1.5px solid currentColor;
-  content: "";
-  flex: 0 0 6px;
-  height: 6px;
-  margin-top: 3px;
-  transform: rotate(225deg);
-  width: 6px;
-}
-
-.sort-button.sort-ascending[aria-pressed="true"]::after {
-  margin-top: -3px;
-  transform: rotate(45deg);
+.sort-chevron {
+  color: var(--arena-muted);
+  flex: 0 0 auto;
+  height: 0.875em;
+  width: 0.875em;
 }
 
 .sort-button:hover { background: var(--arena-soft); color: var(--arena-black); }

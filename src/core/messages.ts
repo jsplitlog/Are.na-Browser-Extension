@@ -6,7 +6,7 @@ export type Request =
   | { kind: 'lookup'; url: string }                    // phase 1
   | { kind: 'getConnections'; normalizedUrl: string }  // phase 2
   | { kind: 'getAuthState' }
-  | { kind: 'signIn' }
+  | { kind: 'signIn'; remember: boolean }
   | { kind: 'signOut' };
 
 export type Response =
@@ -16,5 +16,13 @@ export type Response =
     connections: Record<number, ArenaChannel[]>;
     connectionCounts: Record<number, number>;
   }
-  | { kind: 'authState'; signedIn: boolean; userSlug: string | null; tier: string | null }
+  | {
+    kind: 'authState';
+    signedIn: boolean;
+    displayName: string | null;
+    userSlug: string | null;
+    avatarUrl: string | null;
+    tier: string | null;
+  }
+  | { kind: 'error'; message: string }
   | { kind: 'ok' };

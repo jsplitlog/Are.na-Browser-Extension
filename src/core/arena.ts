@@ -62,7 +62,8 @@ async function request(path: string, params: Record<string, string>, authenticat
   const token = authenticated ? await getToken() : null;
   if (authenticated && !token) throw new ArenaError('unauthenticated', 'Sign in to search Are.na', 401);
 
-  // A 403/5xx gets one retry. A 429 is retried after the server's reset time.
+  // Transient timeout, permission-edge, and server failures get one retry. A
+  // 429 is retried after the server's reset time.
   for (let attempt = 0; attempt < 2; attempt += 1) {
     consume(budget);
     await takeSlot();
@@ -91,7 +92,7 @@ async function request(path: string, params: Record<string, string>, authenticat
       if (attempt === 0) continue;
       throw new ArenaError('rate_limited', 'Are.na rate limit reached', 429);
     }
-    if (response.status === 403 || response.status >= 500) {
+    if (response.status === 403 || response.status === 408 || response.status >= 500) {
       if (attempt === 0) {
         await sleep(250);
         continue;
@@ -152,7 +153,7 @@ const parseChannel = (value: unknown): ArenaChannel | null => {
     title: asString(channel.title) ?? slug,
     ownerSlug,
     ownerName: owner ? asString(owner.full_name) ?? asString(owner.name) : null,
-    status: asString(channel.status),
+    visibility: asString(channel.visibility) ?? asString(channel.status),
     webUrl: `https://www.are.na/${ownerSlug ? `${ownerSlug}/` : ''}${slug}`,
   };
 };
@@ -203,7 +204,7 @@ export const getBlockConnections = async (id: number, budget?: RequestBudget): P
   const body = asRecord(await request(
     `/blocks/${encodeURIComponent(String(id))}/connections`,
     { per: '1', sort: 'created_at_asc' },
-    false,
+    true,
     budget,
   ));
   const data = body && Array.isArray(body.data) ? body.data : [];

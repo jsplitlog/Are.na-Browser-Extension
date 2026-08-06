@@ -14,9 +14,12 @@ const area = (store: Store) => ({
   remove: vi.fn(async (keys: string[]) => { keys.forEach((key) => delete store[key]); }),
 });
 
+const getRedirectURL = vi.fn((path = '') => `https://unit-test.chromiumapp.org/${path}`);
+const launchWebAuthFlow = vi.fn();
+
 vi.stubGlobal('chrome', {
   storage: { session: area(session), local: area(local) },
-  identity: { getRedirectURL: () => 'https://unit-test.chromiumapp.org/', launchWebAuthFlow: vi.fn() },
+  identity: { getRedirectURL, launchWebAuthFlow },
 });
 
 const auth = await import('../src/core/auth');
@@ -25,33 +28,51 @@ beforeEach(() => {
   Object.keys(session).forEach((key) => delete session[key]);
   Object.keys(local).forEach((key) => delete local[key]);
   vi.stubGlobal('fetch', vi.fn());
+  getRedirectURL.mockClear();
+  launchWebAuthFlow.mockReset();
 });
 
+const prepareOAuth = (accessToken: string, accountResponse: Response): void => {
+  launchWebAuthFlow.mockImplementation(async ({ url }: { url: string }) => {
+    const state = new URL(url).searchParams.get('state');
+    return `https://unit-test.chromiumapp.org/oauth2?code=authorization-code&state=${state}`;
+  });
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: accessToken }), { status: 200 }))
+    .mockResolvedValueOnce(accountResponse);
+};
+
 describe('auth', () => {
-  it('validates /v3/me before saving a session-only token', async () => {
-    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ data: { slug: 'me', badge: 'Supporter' } }), { status: 200 }));
+  it('validates /v3/me before saving a session-only OAuth connection', async () => {
+    prepareOAuth('session-access-token', new Response(JSON.stringify({ data: { slug: 'me', badge: 'Supporter' } }), { status: 200 }));
 
-    await auth.saveToken('  secret-token  ', false);
+    await auth.signInWithOAuth(false);
 
-    expect(fetch).toHaveBeenCalledWith('https://api.are.na/v3/me', expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer secret-token' }) }));
-    expect(await auth.getToken()).toBe('secret-token');
+    expect(fetch).toHaveBeenNthCalledWith(2, 'https://api.are.na/v3/me', expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer session-access-token' }) }));
+    expect(await auth.getToken()).toBe('session-access-token');
     expect(local.arenaAuthToken).toBeUndefined();
-    expect(await auth.getAuthState()).toEqual({ signedIn: true, userSlug: 'me', tier: 'Supporter' });
+    expect(await auth.getAuthState()).toEqual({
+      signedIn: true,
+      displayName: null,
+      userSlug: 'me',
+      avatarUrl: null,
+      tier: 'Supporter',
+    });
   });
 
-  it('only writes local storage when remember is selected', async () => {
-    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ data: {} }), { status: 200 }));
+  it('only writes an OAuth connection to local storage when remember is selected', async () => {
+    prepareOAuth('remembered-access-token', new Response(JSON.stringify({ data: {} }), { status: 200 }));
 
-    await auth.saveToken('remembered', true);
+    await auth.signInWithOAuth(true);
 
-    expect(local.arenaAuthToken).toBe('remembered');
+    expect(local.arenaAuthToken).toBe('remembered-access-token');
     expect(session.arenaAuthToken).toBeUndefined();
   });
 
-  it('does not persist a rejected token', async () => {
-    vi.mocked(fetch).mockResolvedValue(new Response('', { status: 401 }));
+  it('does not persist an OAuth access token rejected by Are.na', async () => {
+    prepareOAuth('rejected-access-token', new Response('', { status: 401 }));
 
-    await expect(auth.saveToken('bad-token', false)).rejects.toMatchObject({ kind: 'invalid_token' });
+    await expect(auth.signInWithOAuth(false)).rejects.toMatchObject({ kind: 'invalid_token' });
     expect(await auth.getToken()).toBeNull();
   });
 
@@ -66,7 +87,81 @@ describe('auth', () => {
     expect(local['arena-cache:example.com/page']).toBeUndefined();
   });
 
-  it('keeps OAuth unavailable until a public client ID is registered', async () => {
-    await expect(auth.signInWithOAuth(false)).rejects.toMatchObject({ kind: 'oauth_unconfigured' });
+  it('signs in through Authorization Code + PKCE with read-only scope', async () => {
+    let authorizationUrl = '';
+    launchWebAuthFlow.mockImplementation(async ({ url }: { url: string }) => {
+      authorizationUrl = url;
+      const state = new URL(url).searchParams.get('state');
+      return `https://unit-test.chromiumapp.org/oauth2?code=authorization-code&state=${state}`;
+    });
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'oauth-token' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: {
+          name: 'OAuth User',
+          slug: 'oauth-user',
+          avatar: { src: 'https://static.are.na/oauth-user.jpg' },
+          badge: 'Premium',
+        },
+      }), { status: 200 }));
+
+    await expect(auth.signInWithOAuth(false)).resolves.toEqual({
+      displayName: 'OAuth User',
+      userSlug: 'oauth-user',
+      avatarUrl: 'https://static.are.na/oauth-user.jpg',
+      tier: 'Premium',
+    });
+
+    expect(getRedirectURL).toHaveBeenCalledWith('oauth2');
+    const authorization = new URL(authorizationUrl);
+    expect(authorization.origin + authorization.pathname).toBe('https://www.are.na/oauth/authorize');
+    expect(authorization.searchParams.get('client_id')).toBe(auth.OAUTH_CLIENT_ID);
+    expect(authorization.searchParams.get('redirect_uri')).toBe('https://unit-test.chromiumapp.org/oauth2');
+    expect(authorization.searchParams.get('response_type')).toBe('code');
+    expect(authorization.searchParams.get('scope')).toBe('read');
+    expect(authorization.searchParams.get('code_challenge_method')).toBe('S256');
+
+    const exchange = new URLSearchParams(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+    const verifier = exchange.get('code_verifier') ?? '';
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+    const expectedChallenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+    expect(authorization.searchParams.get('code_challenge')).toBe(expectedChallenge);
+    expect(exchange.get('grant_type')).toBe('authorization_code');
+    expect(exchange.get('client_id')).toBe(auth.OAUTH_CLIENT_ID);
+    expect(exchange.get('redirect_uri')).toBe('https://unit-test.chromiumapp.org/oauth2');
+    expect(exchange.get('code')).toBe('authorization-code');
+    expect(await auth.getToken()).toBe('oauth-token');
+  });
+
+  it('rejects an OAuth callback with the wrong state before exchanging it', async () => {
+    launchWebAuthFlow.mockResolvedValue('https://unit-test.chromiumapp.org/oauth2?code=authorization-code&state=wrong');
+
+    await expect(auth.signInWithOAuth(false)).rejects.toMatchObject({ kind: 'oauth_state' });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('surfaces a provider denial without attempting an exchange', async () => {
+    launchWebAuthFlow.mockImplementation(async ({ url }: { url: string }) => {
+      const state = new URL(url).searchParams.get('state');
+      return `https://unit-test.chromiumapp.org/oauth2?error=access_denied&error_description=Access%20was%20denied.&state=${state}`;
+    });
+
+    await expect(auth.signInWithOAuth(false)).rejects.toMatchObject({ kind: 'oauth_cancelled', message: 'Access was denied.' });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('uses the provider exchange error when Are.na rejects the code', async () => {
+    launchWebAuthFlow.mockImplementation(async ({ url }: { url: string }) => {
+      const state = new URL(url).searchParams.get('state');
+      return `https://unit-test.chromiumapp.org/oauth2?code=expired-code&state=${state}`;
+    });
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ error_description: 'Authorization code expired.' }), { status: 400 }));
+
+    await expect(auth.signInWithOAuth(false)).rejects.toMatchObject({
+      kind: 'oauth_exchange',
+      message: 'Authorization code expired.',
+    });
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

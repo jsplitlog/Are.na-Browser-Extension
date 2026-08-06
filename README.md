@@ -29,32 +29,36 @@ new download, then click **Reload** on the extension's card.
 
 ## Connect your Are.na account
 
-The extension signs in with a personal access token (PAT).
+1. Click **Are.na Connections** on a normal web page. The sign-in card opens in
+   the side panel.
+2. Leave **Remember device** unchecked to keep your connection for the
+   current browser session only. Check it to stay signed in between sessions.
+3. Click **Sign in with Are.na ✶✶**.
+4. Approve the read-only connection on Are.na.
 
-1. Sign in to Are.na and open
-   [Personal Access Tokens](https://www.are.na/developers/personal-access-tokens).
-2. Under **Create token**, enter a descriptive name such as
-   `Are.na Connections`.
-3. Choose an expiration and the least-privileged access level that permits API
-   reading, then click **Create token**.
-4. Copy the generated token. Treat it like a password: Are.na warns that PATs
-   can grant broad access to your account. Do not share it or commit it to this
-   repository.
-5. Click the extension button on a normal web page, then choose **Open settings**.
-   You can also open **Details → Extension options** from
-   `chrome://extensions`.
-6. Paste the token into **Personal access token**.
-7. Leave **Remember on this device** unchecked to keep the token for the current
-   browser session only. Check it to keep the token in Chrome's local extension
-   storage between sessions.
-8. Click **Sign in with token**. A successful connection displays
-   `Signed in as your-username`.
+The extension can read the Are.na data available to your account, but cannot
+create, edit, or delete anything. Signing out removes the saved access token
+from the extension. You can fully revoke access from Are.na's
+[Authorized Apps](https://www.are.na/developers/oauth/authorized) page.
 
 Return to the page you want to check and click the extension button. The Are.na
 Connections side panel will open with the matching blocks.
 
-Signing out removes the saved token from the extension. To revoke it completely,
-delete the token from Are.na's Personal Access Tokens page.
+Signing out removes local access from the extension. To revoke it completely,
+use Are.na's Authorized Apps page.
+
+## OAuth configuration
+
+The committed manifest key pins the development extension ID to
+`poolkoglmiobmahcbamkbhljhgeooajm`. Do not replace it casually: the registered
+OAuth callback and existing Chrome installation data depend on that ID.
+
+The extension uses Authorization Code + PKCE with the `read` scope and the
+callback below. It does not ship or use an OAuth client secret.
+
+```text
+https://poolkoglmiobmahcbamkbhljhgeooajm.chromiumapp.org/oauth2
+```
 
 ## Build from source
 

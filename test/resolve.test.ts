@@ -52,7 +52,7 @@ describe('two-phase resolver integration', () => {
     mocks.putCached.mockImplementation(async (result: LookupResult) => { cached = result; });
     mocks.searchBlocks.mockResolvedValue([block]);
     mocks.getBlockConnections.mockResolvedValue({
-      channels: [{ id: 7, slug: 'references', title: 'References', ownerSlug: 'owner', ownerName: 'Owner', status: 'public', webUrl: 'https://www.are.na/owner/references' }],
+      channels: [{ id: 7, slug: 'references', title: 'References', ownerSlug: 'owner', ownerName: 'Owner', visibility: 'public', webUrl: 'https://www.are.na/owner/references' }],
       total: 1,
     });
   });
@@ -84,7 +84,7 @@ describe('two-phase resolver integration', () => {
       title: 'Already cached',
       ownerSlug: 'owner',
       ownerName: 'Owner',
-      status: 'public',
+      visibility: 'public',
       webUrl: 'https://www.are.na/owner/already-cached',
     };
     const partial: LookupResult = {

@@ -20,7 +20,7 @@ export interface ArenaChannel {
   title: string;
   ownerSlug: string | null;    // from `owner`, NOT `user` — see §2.7
   ownerName: string | null;
-  status: string | null;       // 'public' | 'closed' | …
+  visibility: string | null;   // 'public' | 'closed' | 'private' | …
   webUrl: string;              // are.na/{ownerSlug}/{slug}, degraded if no owner
 }
 

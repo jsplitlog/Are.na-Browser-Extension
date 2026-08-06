@@ -1,7 +1,8 @@
 import type { LookupResult } from './types';
 
 const CACHE_NAMESPACE = 'arena-cache:';
-const PREFIX = `${CACHE_NAMESPACE}v2:`;
+const PREFIX = `${CACHE_NAMESPACE}v4:`;
+const PREVIOUS_PREFIXES = [`${CACHE_NAMESPACE}v3:`, `${CACHE_NAMESPACE}v2:`];
 const HIT_TTL = 7 * 24 * 60 * 60 * 1000;
 const MISS_TTL = 24 * 60 * 60 * 1000;
 const MAX_ENTRIES = 2000;
@@ -12,6 +13,7 @@ const MAX_CACHE_BYTES = 8 * 1024 * 1024;
 interface CacheEntry { result: LookupResult; accessedAt: number }
 const keyFor = (normalizedUrl: string) => `${PREFIX}${normalizedUrl}`;
 const legacyKeyFor = (normalizedUrl: string) => `${CACHE_NAMESPACE}${normalizedUrl}`;
+const previousKeysFor = (normalizedUrl: string) => PREVIOUS_PREFIXES.map((prefix) => `${prefix}${normalizedUrl}`);
 const storage = () => chrome.storage.local;
 const storedBytes = (key: string, value: unknown): number =>
   new TextEncoder().encode(key).byteLength + new TextEncoder().encode(JSON.stringify(value)).byteLength;
@@ -26,8 +28,10 @@ const isEntry = (value: unknown): value is CacheEntry => {
 export const getCached = async (normalizedUrl: string): Promise<LookupResult | null> => {
   const key = keyFor(normalizedUrl);
   const legacyKey = legacyKeyFor(normalizedUrl);
-  const stored = await storage().get([key, legacyKey]);
-  if (legacyKey in stored) await storage().remove(legacyKey);
+  const previousKeys = previousKeysFor(normalizedUrl);
+  const stored = await storage().get([key, legacyKey, ...previousKeys]);
+  const obsoleteKeys = [legacyKey, ...previousKeys].filter((obsoleteKey) => obsoleteKey in stored);
+  if (obsoleteKeys.length) await storage().remove(obsoleteKeys);
   const value = stored[key];
   if (!isEntry(value)) return null;
   const ttl = value.result.status === 'hit' ? HIT_TTL : value.result.status === 'miss' ? MISS_TTL : 0;
