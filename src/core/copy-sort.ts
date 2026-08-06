@@ -15,11 +15,6 @@ export const summarizeConnectionCounts = (blocks: ArenaBlock[]): ConnectionCount
   known: blocks.filter(({ connectionCount }) => connectionCount !== null).length,
 });
 
-export const totalConnectionCount = (blocks: ArenaBlock[]): number | null => {
-  const summary = summarizeConnectionCounts(blocks);
-  return summary.complete ? summary.count : null;
-};
-
 export const nextCopySort = (current: CopySort, axis: CopySortAxis): CopySort => {
   if (axis === 'connections') {
     return current === 'most-connections' ? 'least-connections' : 'most-connections';

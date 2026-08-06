@@ -16,18 +16,29 @@ const statusForError = (error: unknown): LookupStatus => {
   if (!(error instanceof ArenaError)) return 'error';
   if (error.kind === 'unauthenticated') return 'unauthenticated';
   if (error.kind === 'not_premium') return 'not_premium';
+  if (error.kind === 'rate_limited') return 'rate_limited';
   return 'error';
+};
+
+// classifyUrl rejects URLs that `new URL` cannot parse, so normalizing can throw
+// on exactly the inputs the early returns carry.
+const normalizedOrRaw = (url: string): string => {
+  try {
+    return normalizeUrl(url);
+  } catch {
+    return url;
+  }
 };
 
 export const blocksFor = async (
   url: string,
   budget: RequestBudget = createRequestBudget(),
 ): Promise<LookupResult> => {
-  if (!(await getToken())) return resultFor(url, 'unauthenticated');
+  if (!(await getToken())) return resultFor(normalizedOrRaw(url), 'unauthenticated');
   const classification = classifyUrl(url);
   if (!classification.resolvable) {
     await recordLookup(false);
-    return resultFor(url, 'skipped');
+    return resultFor(normalizedOrRaw(url), 'skipped');
   }
   const normalizedUrl = normalizeUrl(url);
   const cached = await getCached(normalizedUrl);

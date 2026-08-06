@@ -1,3 +1,5 @@
+import { clearCache } from './cache';
+
 export interface AuthState {
   signedIn: boolean;
   displayName: string | null;
@@ -212,4 +214,3 @@ export const signInWithOAuth = async (remember: boolean): Promise<ValidatedAccou
   if (!accessToken) throw new AuthError('oauth_exchange', 'Are.na returned no access token.');
   return storeAccessToken(accessToken, remember);
 };
-import { clearCache } from './cache';
