@@ -47,6 +47,21 @@ describe('side panel release contract', () => {
     expect(themeStyles).toContain('--arena-channel-open: #2ba425');
   });
 
+  it('shares the reader design tokens across the sidebar and settings', () => {
+    expect(themeStyles).toContain('--arena-space-1: 4px');
+    expect(themeStyles).toContain('--arena-space-4: 16px');
+    expect(themeStyles).toContain('--arena-column-gap: 14px');
+    expect(themeStyles).toContain('--arena-gutter: 16px');
+    expect(themeStyles).toContain('--arena-row-padding: 14px');
+    expect(themeStyles).toContain('--arena-text-title: 0.875rem');
+    expect(themeStyles).toContain('--arena-text-ui: 0.75rem');
+    expect(themeStyles).toContain('--arena-radius: 0.25rem');
+    expect(themeStyles).toContain('--arena-control-active: #999');
+    expect(themeStyles).toContain('--arena-avatar-size: 14px');
+    expect(sidepanelStyles).toContain('--panel-gutter: var(--arena-gutter)');
+    expect(optionsStyles).toContain('var(--arena-control-active)');
+  });
+
   it('uses direct block language and bounded two-way sort controls', () => {
     expect(sidepanelSource).toContain("'Connections'");
     expect(sidepanelSource).toContain("'Date'");

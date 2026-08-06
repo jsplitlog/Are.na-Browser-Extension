@@ -1,20 +1,44 @@
 :root {
+  color-scheme: light dark;
   --arena-black: #333;
   --arena-text: #585858;
   --arena-muted: #999;
   --arena-line: #eee;
   --arena-soft: #f7f7f7;
   --arena-surface: #fff;
-  --arena-input: #fff;
+  --arena-input: rgb(247, 245, 244);
   --arena-control-border: #ccc;
+  --arena-control-active: #999;
   --arena-blue: #00bbf7;
   --arena-channel-open: #17ac10;
   --arena-channel-open-background: rgb(23 172 16 / 2.5%);
   --arena-channel-open-active-background: rgb(23 172 16 / 7%);
+
+  --arena-radius: 0.25rem;
+  --arena-space-1: 4px;
+  --arena-space-2: 8px;
+  --arena-space-3: 12px;
+  --arena-space-4: 16px;
+  --arena-space-6: 24px;
+  --arena-space-8: 32px;
+  --arena-inline-gap: 6px;
+  --arena-column-gap: 14px;
+  --arena-gutter: 16px;
+  --arena-row-padding: 14px;
+
+  --arena-text-title: 0.875rem;
+  --arena-text-body: 0.8125rem;
+  --arena-text-ui: 0.75rem;
+  --arena-text-small: 0.6875rem;
+  --arena-text-label: 0.625rem;
+  --arena-text-micro: 0.5625rem;
+  --arena-leading: 1.3;
+  --arena-control-height: calc(var(--arena-text-ui) * 1.8125 + 2px);
+  --arena-avatar-size: 14px;
+
   accent-color: var(--arena-blue);
   background: var(--arena-surface);
   color: var(--arena-text);
-  color-scheme: light;
   font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
   font-synthesis: none;
 }
@@ -28,11 +52,11 @@
     --arena-soft: #131313;
     --arena-surface: #000;
     --arena-input: #080a0b;
-    --arena-control-border: #2f2f2f;
+    --arena-control-border: #444;
+    --arena-control-active: #6e6e6e;
     --arena-blue: #17b0e2;
     --arena-channel-open: #2ba425;
     --arena-channel-open-background: rgb(43 164 37 / 10%);
     --arena-channel-open-active-background: rgb(43 164 37 / 16%);
-    color-scheme: dark;
   }
 }
