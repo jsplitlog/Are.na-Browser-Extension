@@ -125,6 +125,16 @@ const storeAccessToken = async (token: string, remember: boolean): Promise<Valid
   return account;
 };
 
+/** Signs in with a manually-pasted Are.na personal access token. This is the
+ *  universal fallback for targets where `platform.supportsOAuth` is false
+ *  (currently Safari — see src/platform/safari.ts) and never depends on the
+ *  platform adapter, so it works identically on every target. */
+export const signInWithToken = async (token: string, remember: boolean): Promise<ValidatedAccount> => {
+  const credential = token.trim();
+  if (!credential) throw new AuthError('invalid_token', 'Enter an access token.');
+  return storeAccessToken(credential, remember);
+};
+
 const base64url = (bytes: Uint8Array): string => {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);

@@ -122,3 +122,48 @@ describe('side panel release contract', () => {
     expect(sidepanelSource).toContain('formatOldestBlockAge(result.blocks)');
   });
 });
+
+// The shipped Safari manifest is public/manifest.base.json merged with the
+// public/manifest.safari.json overlay, using the same merge shape as the
+// Chrome contract above (see scripts/build-manifest.mjs). WS2 owns this page
+// as an action popup rather than the Chrome side panel — these assertions
+// guard the parts of that swap this workstream is responsible for.
+const safariOverlay = readManifestJson('public/manifest.safari.json');
+const safariManifest = {
+  ...base,
+  ...safariOverlay,
+  permissions: [
+    ...(base.permissions as string[]),
+    ...((safariOverlay.permissions as string[] | undefined) ?? []),
+  ],
+} as {
+  action?: { default_popup?: string };
+  background?: { service_worker?: string };
+  key?: string;
+  minimum_chrome_version?: string;
+  permissions?: string[];
+  side_panel?: { default_path?: string };
+};
+
+describe('safari popup contract', () => {
+  it('opens as an action popup instead of the Chrome side panel', () => {
+    expect(safariManifest.action?.default_popup).toBe('sidepanel/sidepanel.html');
+    expect(safariManifest.background?.service_worker).toBe('background/service-worker.js');
+    expect(safariManifest.side_panel).toBeUndefined();
+    expect(safariManifest.key).toBeUndefined();
+    expect(safariManifest.minimum_chrome_version).toBeUndefined();
+    expect(safariManifest.permissions).not.toContain('identity');
+    expect(safariManifest.permissions).not.toContain('sidePanel');
+  });
+
+  it('sizes the popup without reintroducing the old fixed sidebar width', () => {
+    expect(sidepanelStyles).toContain('body.popup-mode');
+    expect(sidepanelStyles).not.toMatch(/(?:min-|max-)?width:\s*360px/);
+  });
+
+  it('hides the OAuth button when the platform adapter does not support it, falling back to token sign-in', () => {
+    expect(sidepanelSource).toContain('platform.supportsOAuth');
+    expect(sidepanelSource).toContain('signInWithToken');
+    expect(sidepanelSource).not.toContain('chrome.tabs');
+  });
+});

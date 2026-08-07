@@ -23,6 +23,22 @@ body {
   background: var(--arena-surface);
   line-height: var(--arena-leading);
   min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Safari has no sidebar API — this page runs as an action popup there (see
+ * src/sidepanel/sidepanel.ts, which adds this class only when __TARGET__ ===
+ * 'safari'). Popups don't resize like a sidebar, so they need explicit
+ * dimensions; Chrome and Firefox never get this class and keep the resizable
+ * sidebar layout above completely unscoped. */
+body.popup-mode {
+  max-height: 600px;
+  min-height: 0;
+  overflow-y: auto;
+  width: 380px;
 }
 
 @media (max-width: 640px) {
@@ -285,6 +301,37 @@ button { font: inherit; }
   font-size: var(--arena-text-micro);
   font-weight: 700;
   justify-content: center;
+}
+
+.auth-token-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--arena-space-2);
+}
+
+.auth-token-label {
+  color: var(--arena-muted);
+  font-size: var(--arena-text-ui);
+}
+
+.auth-token-input {
+  appearance: none;
+  background: var(--arena-input);
+  border: 1px solid var(--arena-control-border);
+  border-radius: var(--arena-radius);
+  color: var(--arena-black);
+  /* 16px minimum keeps iOS Safari from zooming the page on focus (WS3). */
+  font-size: 16px;
+  /* 44px minimum touch target, ahead of the iOS Safari pass (WS3). */
+  min-height: 44px;
+  padding: var(--arena-space-2) var(--arena-space-3);
+  width: 100%;
+}
+
+.auth-token-input:focus-visible {
+  border-color: var(--arena-control-active);
+  outline: 1px solid var(--arena-blue);
+  outline-offset: 1px;
 }
 
 button:focus-visible,
