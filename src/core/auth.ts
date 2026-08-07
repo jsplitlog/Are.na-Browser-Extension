@@ -140,7 +140,7 @@ const pkceChallenge = async (verifier: string): Promise<string> => {
 
 export const isOAuthConfigured = (): boolean => OAUTH_CLIENT_ID.length > 0;
 
-export const getOAuthRedirectUri = (): string => chrome.identity.getRedirectURL(OAUTH_REDIRECT_PATH);
+export const getOAuthRedirectUri = (): string => platform.getRedirectURL(OAUTH_REDIRECT_PATH);
 
 /** Runs Authorization Code + PKCE. The client ID must be registered for this extension's exact redirect. */
 export const signInWithOAuth = async (remember: boolean): Promise<ValidatedAccount> => {
@@ -161,10 +161,7 @@ export const signInWithOAuth = async (remember: boolean): Promise<ValidatedAccou
   });
   let callbackUrl: string | undefined;
   try {
-    callbackUrl = await chrome.identity.launchWebAuthFlow({
-      url: `https://www.are.na/oauth/authorize?${params.toString()}`,
-      interactive: true,
-    });
+    callbackUrl = await platform.launchAuthFlow(`https://www.are.na/oauth/authorize?${params.toString()}`);
   } catch {
     throw new AuthError('oauth_cancelled', 'OAuth sign-in was cancelled or could not be opened.');
   }
@@ -213,3 +210,4 @@ export const signInWithOAuth = async (remember: boolean): Promise<ValidatedAccou
   return storeAccessToken(accessToken, remember);
 };
 import { clearCache } from './cache';
+import { platform } from '../platform';

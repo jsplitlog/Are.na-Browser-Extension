@@ -5,6 +5,7 @@ import { getCached } from '../core/cache';
 import type { Request, Response } from '../core/messages';
 import { blocksFor, connectionsFor } from '../core/resolve';
 import type { LookupResult } from '../core/types';
+import { platform } from '../platform';
 
 const lookups = new Map<string, Promise<LookupResult>>();
 const connections = new Map<string, Promise<LookupResult>>();
@@ -83,8 +84,9 @@ chrome.action.onClicked.addListener((tab) => {
   } satisfies ActivePageRequest;
 
   // Start the session handoff before opening, while preserving the action click's
-  // user activation for chrome.sidePanel.open(). The panel also observes storage
-  // changes, so a slower storage write cannot leave it showing stale page data.
+  // user activation for platform.openPanel() (a synchronous call into the target's
+  // panel-open API — see src/platform/). The panel also observes storage changes,
+  // so a slower storage write cannot leave it showing stale page data.
   void chrome.storage.session.set({ [ACTIVE_PAGE_KEY]: request }).catch(() => undefined);
-  void chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => undefined);
+  void platform.openPanel(tab).catch(() => undefined);
 });

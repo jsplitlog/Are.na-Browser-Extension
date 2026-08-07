@@ -1,1 +1,0 @@
-var e=`arenaActivePage`,t=e=>{if(!e||typeof e!=`object`)return!1;let t=e;return typeof t.url==`string`&&t.url.trim().length>0&&typeof t.requestedAt==`number`&&Number.isFinite(t.requestedAt)&&t.requestedAt>=0};export{t as n,e as t};

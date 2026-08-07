@@ -5,8 +5,22 @@ import { describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '..');
 const readme = readFileSync(resolve(root, 'README.md'), 'utf8');
-const sourceManifest = JSON.parse(readFileSync(resolve(root, 'public/manifest.json'), 'utf8')) as Record<string, unknown>;
-const distributionManifest = JSON.parse(readFileSync(resolve(root, 'dist/manifest.json'), 'utf8')) as unknown;
+const readManifestJson = (relativePath: string): Record<string, unknown> =>
+  JSON.parse(readFileSync(resolve(root, relativePath), 'utf8')) as Record<string, unknown>;
+
+// See test/sidebar-contract.test.ts for why this recreates the base + chrome
+// overlay merge (scripts/build-manifest.mjs) instead of reading a single file:
+// public/manifest.json no longer exists, split into per-target overlays.
+const base = readManifestJson('public/manifest.base.json');
+const chromeOverlay = readManifestJson('public/manifest.chrome.json');
+const sourceManifest: Record<string, unknown> = {
+  ...base,
+  ...chromeOverlay,
+  permissions: [...(base.permissions as string[]), ...(chromeOverlay.permissions as string[])],
+};
+// dist/chrome/manifest.json is now a build output (`npm run build:chrome`),
+// not a committed prebuilt distribution — run the build before `npm test`.
+const distributionManifest = readManifestJson('dist/chrome/manifest.json');
 
 describe('distribution scaffold', () => {
   it('documents unpacked installation and the OAuth connection path', () => {
@@ -25,7 +39,7 @@ describe('distribution scaffold', () => {
     expect(readme).not.toContain('Use token');
   });
 
-  it('ships a prebuilt distribution with the current manifest', () => {
+  it('builds a Chrome distribution with the current manifest', () => {
     expect(distributionManifest).toEqual(sourceManifest);
   });
 

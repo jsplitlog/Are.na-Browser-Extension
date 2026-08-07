@@ -20,12 +20,12 @@ follow your browsing in the background.
 3. Open `chrome://extensions` in Chrome.
 4. Turn on **Developer mode**.
 5. Click **Load unpacked**.
-6. Select the `dist` folder inside the unzipped download.
+6. Select the `dist/chrome` folder inside the unzipped download.
 7. Optionally pin **Are.na Connections** from Chrome's Extensions menu.
 
 Chrome loads the extension directly from that folder, so do not delete it after
-installation. To update, replace the existing `dist` contents with those from a
-new download, then click **Reload** on the extension's card.
+installation. To update, replace the existing `dist/chrome` contents with those
+from a new download, then click **Reload** on the extension's card.
 
 ## Connect your Are.na account
 
@@ -55,4 +55,4 @@ npm test
 npm run build
 ```
 
-Load the generated `dist` folder through the same Chrome steps above.
+Load the generated `dist/chrome` folder through the same Chrome steps above.

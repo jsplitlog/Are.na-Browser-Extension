@@ -1,0 +1,9 @@
+{
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "sidepanel/sidepanel.html"
+  }
+}

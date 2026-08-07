@@ -178,3 +178,49 @@ the WS2 popup mode.
 2. Firefox: create AMO account / decide listed vs self-distributed signing.
 3. Apple: Developer Program enrollment decision (gates WS2 distribution and
    all of WS3 beyond the Simulator).
+
+## WS0 status: done — handoff notes for WS1/WS2/WS4
+
+Scaffolding landed on this branch. What's in place, so nobody re-derives it:
+
+- `src/platform/index.ts` exports `platform: PlatformAdapter` (`openPanel`,
+  `getRedirectURL`, `launchAuthFlow`, `supportsOAuth`), selected at build time
+  by `__TARGET__` via a literal ternary (not an object map) so Rollup dead-
+  branch-eliminates the other two targets' adapters out of each bundle —
+  verified `dist/firefox/background/service-worker.js` contains no
+  `sidePanel` reference and `dist/chrome/...` contains no `sidebarAction`.
+  `src/platform/chrome.ts` is the real, working adapter. `firefox.ts` and
+  `safari.ts` are stubs with `// WS1:` / `// WS2:` comments — read those
+  before editing.
+- `public/manifest.base.json` + `manifest.<target>.json` overlays, merged by
+  `scripts/build-manifest.mjs` (`mergeManifest`/`buildManifestFor`/
+  `writeMergedManifest`, dependency-free). Permissions arrays append+dedupe;
+  everything else deep-merges with overlay winning. `public/manifest.json` no
+  longer exists.
+- `manifest.firefox.json` and `manifest.safari.json` are minimal *skeletons*
+  (WS1/WS2 own the real contents — see the WS1/WS2 sections above). Known gap
+  already visible via `npm run lint:firefox`: Firefox now wants
+  `browser_specific_settings.gecko.data_collection_permissions`; not added
+  here since the correct value is a product decision, not a build detail.
+- `vite.config.ts` reads `TARGET` env (default `chrome`), builds to
+  `dist/<target>/`, defines `__TARGET__`, and copies `public/icons/` +
+  the merged manifest itself (`publicDir` is disabled so `manifest.*.json`
+  source files never leak into `dist/`).
+- `package.json` has `build`, `build:chrome`, `build:firefox`, `build:safari`,
+  `dev` (chrome watch), `lint:firefox` (`web-ext lint`, added as a
+  devDependency), `package` (stub — see below), `test`, `test:watch`.
+- `scripts/package.mjs` is a stub that exits 0; WS4 owns the real zip-per-
+  target implementation described in the WS4 section above.
+- **Breaking change worth knowing about:** the repo used to ship a committed,
+  prebuilt `dist/` folder (source-controlled, so `README`'s "Download ZIP →
+  load unpacked" flow and `test/scaffold.test.ts` worked with zero build
+  step). That folder is retired in favor of per-target `dist/<target>/`
+  build output; `README.md` now points the unpacked-install instructions at
+  `dist/chrome`. `test/scaffold.test.ts` and `test/sidebar-contract.test.ts`
+  were updated accordingly (`public/manifest.json` reads replaced with a
+  base+chrome-overlay merge; the "prebuilt distribution" test now reads the
+  freshly built `dist/chrome/manifest.json`, so a **cold clone needs
+  `npm run build:chrome` (or `npm run build`) before `npm test` passes that
+  check**). Whether to commit a fresh prebuilt `dist/chrome/` (as the old
+  root `dist/` was) is j's call — WS4's packaging work is the natural place
+  to revisit this.

@@ -3,7 +3,21 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '..');
-const manifest = JSON.parse(readFileSync(resolve(root, 'public/manifest.json'), 'utf8')) as {
+const readManifestJson = (relativePath: string): Record<string, unknown> =>
+  JSON.parse(readFileSync(resolve(root, relativePath), 'utf8')) as Record<string, unknown>;
+
+// The shipped Chrome manifest is public/manifest.base.json merged with the
+// public/manifest.chrome.json overlay (see scripts/build-manifest.mjs). The
+// only array field either file sets is `permissions`, so recreating that
+// merge here only needs a plain spread plus an append — this asserts against
+// exactly what dist/chrome/manifest.json contains for the Chrome target.
+const base = readManifestJson('public/manifest.base.json');
+const chromeOverlay = readManifestJson('public/manifest.chrome.json');
+const manifest = {
+  ...base,
+  ...chromeOverlay,
+  permissions: [...(base.permissions as string[]), ...(chromeOverlay.permissions as string[])],
+} as {
   action?: { default_popup?: string };
   minimum_chrome_version?: string;
   options_page?: string;

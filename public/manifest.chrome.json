@@ -1,0 +1,12 @@
+{
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx1rg5N0qLZDsGI7l6aQihftmJ+ysYfkfYp4Clm/NDjy3ZOV2qFTakwVlwyjiFGJT5Cu/0u5n/wFXqPIaoeO0vlfcxn+DwmQzpILhUMibl6UYx0MR79fNMnCUd/B147jUrgWGamp3HsdUDL93dkASkxRuwVmm3xRD/mlZ1SKYB8ZgogV9rbHNgalfSDzETuu2qI/05JltXPuiTEYirYgTSMrMEt0FcmAG7e7Ug8dbDemIJozN975Tp60VO+C0nb32OyoHXZqFtubCLV6KERnldFnrAjCQxtRuZDrdv6hULggXbmxSMe25Ug2U0EefzGybJkNzkBemXydMdLc97Bt/7wIDAQAB",
+  "minimum_chrome_version": "116",
+  "permissions": ["identity", "sidePanel"],
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  }
+}
