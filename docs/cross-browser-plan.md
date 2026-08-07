@@ -224,3 +224,129 @@ Scaffolding landed on this branch. What's in place, so nobody re-derives it:
   check**). Whether to commit a fresh prebuilt `dist/chrome/` (as the old
   root `dist/` was) is j's call — WS4's packaging work is the natural place
   to revisit this.
+
+## WS4 status: done — test matrix, packaging, CI
+
+- **Fixed the clean-clone `npm test` regression.** `test/scaffold.test.ts` no
+  longer reads a possibly-absent `dist/chrome/manifest.json` off disk;  it now
+  calls `scripts/build-manifest.mjs`'s exported `writeMergedManifest('chrome',
+  <tmp dir>)` itself before asserting, then reads that. This runs the real
+  merge step (not a reimplementation of it) without paying for a full
+  `tsc && vite build` on every `npm test`, and without depending on whatever
+  build artifact happens to be sitting in `dist/`. Verified with
+  `rm -rf dist && npm test` — passes from a bare clone. (Rejected: a `pretest`
+  script running the full build — correct, but adds tens of seconds to every
+  local `npm test`/watch run for the sake of one assertion; and trusting a
+  stale `dist/chrome/manifest.json` if present — silently passes against
+  yesterday's build.)
+- **`dist/` is now git-ignored** (`.gitignore`). Rationale: it's fully a build
+  output now (three targets, Vite content-hashed filenames per build), so
+  committing it means noisy diffs on every build and merge conflicts between
+  anyone building concurrently — which was already visibly happening between
+  the WS1/WS2/WS4 agents working on this branch at the same time.
+  **Tradeoff, stated plainly:** README's "Download ZIP → select the
+  `dist/chrome` folder" install flow depends on `dist/chrome` existing in the
+  committed tree, because GitHub's "Download ZIP" packages the git tree, not
+  a local build. Ignoring `dist/` breaks that flow for anyone who downloads
+  the repo without building it themselves. **Recommendation:** point
+  README's install instructions at a downloaded **release zip** (produced by
+  `npm run package`, e.g. attached to a GitHub Release) instead of the repo's
+  source ZIP — that's what this workstream's packaging script is for. `README.md`
+  is outside WS4's file ownership for this pass, so it was **not** edited; this
+  is a known follow-up, not a silent break — flagging it here and in the
+  handoff report.
+- **`scripts/package.mjs`** now builds each requested target
+  (`npm run build:<target>`, so it always packages current source, never a
+  stale `dist/`) and zips it to `dist/arena-connections-<target>-<version>.zip`
+  (version from `package.json`). The Chrome zip's `manifest.json` has the
+  `key` field stripped (Chrome Web Store rejects/ignores it in an uploaded
+  package); `dist/chrome/manifest.json` on disk — what `Load unpacked` reads —
+  keeps `key` untouched, since stripping happens only in a temp staging copy.
+  `node scripts/package.mjs [target...]` defaults to all three. Dependency-free:
+  builds shell out to the existing `npm run build:<target>` scripts, archiving
+  shells out to the **system `zip` binary** (macOS/most Linux ship it; the
+  script fails with a clear message up front if it's missing rather than
+  producing nothing).
+- **Test coverage added:** `test/platform.test.ts` (each adapter's shape
+  against `PlatformAdapter`; mocked `chrome.sidePanel`/`chrome.identity` for
+  Chrome and `chrome.sidebarAction`/`chrome.identity` for Firefox; a
+  tripwire proving the Safari adapter never touches `chrome.sidePanel` or
+  `chrome.identity`, since neither exists on Safari; the `__TARGET__`
+  selection default plus a source-level guard that it stays a literal ternary
+  rather than an object map, since only the literal form lets Rollup
+  dead-branch-eliminate the other two targets' adapters out of each bundle;
+  and, for both Chrome and Firefox, an explicit check that `openPanel` reaches
+  the platform's open call **synchronously** — no `await` ahead of it — since
+  both `sidePanel.open()` and `sidebarAction.open()` require still being
+  inside the triggering click's user-activation window) and
+  `test/build-manifest.test.ts` (deep-merge semantics, permissions
+  append+dedupe, replace-not-merge for every other array, and — checked
+  against the real `public/manifest.*.json` files, not just fixtures — that
+  `key`/`minimum_chrome_version` land only on the Chrome manifest). Full
+  bundle-level dead-code-elimination (i.e. that `chrome.sidebarAction` never
+  appears anywhere in the Chrome build's output, and vice versa) is
+  re-verified manually via `npm run build` + `grep`, not baked into the vitest
+  suite, to keep `npm test` fast — see the Verification section of the WS4
+  handoff report for that grep output.
+- **CI**: `.github/workflows/ci.yml`, one job on `ubuntu-latest` with Node LTS,
+  `npm ci`, `npx tsc --noEmit`, `npm test`, `npm run build` (all three
+  targets), then `npm run lint:firefox`. Runs on push to `main` and on every
+  pull request.
+
+## Manual smoke checklist (per browser)
+
+Work through this after any change that touches `src/platform/`, `src/core/auth.ts`,
+`src/background/service-worker.ts`, `src/sidepanel/`, or a manifest overlay.
+Repeat once per target that changed (Chrome via `dist/chrome` unpacked; Firefox
+via `web-ext run --source-dir dist/firefox` or a temporary AMO install; Safari
+via the Xcode project once WS2's converter output exists).
+
+### Chrome
+
+- [ ] Lookup hit: click the toolbar button on a page with known Are.na
+      connections; the panel opens and shows matching blocks.
+- [ ] Lookup miss: click the toolbar button on a page with no connections; the
+      panel shows the empty state, not an error.
+- [ ] Connections expand: open a block's connections list; counts and channel
+      rows load correctly, including channel visibility styling (open/closed/private).
+- [ ] Sign in via OAuth: complete the `chrome.identity` flow; the panel shows
+      the signed-in state afterward.
+- [ ] Sign in via token paste: paste a personal access token; same signed-in result.
+- [ ] Sign out: the panel returns to the signed-out state and a subsequent
+      lookup no longer includes authenticated-only data.
+- [ ] Remember-me persistence: sign in with "Remember device" checked, restart
+      Chrome, reopen the panel — still signed in.
+- [ ] Remember-me off: sign in with it unchecked, restart Chrome, reopen the
+      panel — signed out again (session-only).
+- [ ] Panel reopen after browser restart: quit and relaunch Chrome, click the
+      toolbar button — panel opens normally, no stale state or console errors.
+
+### Firefox
+
+- [ ] Lookup hit and miss (as above) with the sidebar opened via
+      `browser.sidebarAction.open()` from the toolbar click.
+- [ ] Connections expand (as above).
+- [ ] Sign in via OAuth (`identity.launchWebAuthFlow`) — confirm the Firefox
+      redirect URI is registered on the Are.na OAuth app first (see "Human
+      tasks for j").
+- [ ] Sign in via token paste.
+- [ ] Sign out.
+- [ ] Remember-me persistence across a Firefox restart (verify
+      `storage.session` behaves as expected on Firefox 115+).
+- [ ] Panel reopen after browser restart.
+- [ ] Sidebar layout: resize the sidebar narrower than Chrome's 320px minimum
+      — no overflow or clipped content.
+
+### Safari (macOS)
+
+- [ ] Lookup hit and miss via the action popup (no sidebar on this target).
+- [ ] Connections expand inside the popup without overflow or double-scroll.
+- [ ] Sign in via token paste (OAuth may be gated behind `supportsOAuth` until
+      WS2's tab-based flow lands — check the sign-in card reflects that).
+- [ ] Sign in via OAuth, once implemented — confirm the Safari redirect is
+      registered on the Are.na OAuth app first.
+- [ ] Sign out.
+- [ ] Remember-me persistence across a Safari restart.
+- [ ] Panel (popup) reopen after browser restart.
+- [ ] Popup sizing: confirm explicit width/max-height hold and the layout
+      doesn't collide with Safari's own popup chrome.

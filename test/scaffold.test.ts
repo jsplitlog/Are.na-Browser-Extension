@@ -1,7 +1,9 @@
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { pathToFileURL } from 'node:url';
+import { afterAll, describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '..');
 const readme = readFileSync(resolve(root, 'README.md'), 'utf8');
@@ -18,9 +20,30 @@ const sourceManifest: Record<string, unknown> = {
   ...chromeOverlay,
   permissions: [...(base.permissions as string[]), ...(chromeOverlay.permissions as string[])],
 };
-// dist/chrome/manifest.json is now a build output (`npm run build:chrome`),
-// not a committed prebuilt distribution — run the build before `npm test`.
-const distributionManifest = readManifestJson('dist/chrome/manifest.json');
+
+// WS0 retired the committed, prebuilt dist/ folder in favor of per-target build
+// output (dist/<target>/, produced by `npm run build:<target>`), which left this
+// test depending on a stale/missing artifact: a clean clone had no dist/chrome/
+// manifest.json until someone ran a build, so `npm test` failed out of the box.
+// Fixed by invoking the real manifest-merge step (scripts/build-manifest.mjs's
+// writeMergedManifest) ourselves, into a throwaway temp dir, rather than either
+// (a) trusting a possibly-stale dist/chrome/manifest.json left on disk, or
+// (b) running a full `npm run build:chrome` (tsc + vite + rollup) just to check a
+// JSON merge, which would make every `npm test` pay for a full asset build.
+// scripts/build-manifest.mjs is loaded via a dynamic, non-literal import() (as
+// vite.config.ts also does, see its comment) so `tsc --noEmit` never has to
+// resolve a plain .mjs module with no declaration file.
+const buildManifestModule = resolve(root, 'scripts/build-manifest.mjs');
+const { writeMergedManifest } = (await import(pathToFileURL(buildManifestModule).href)) as {
+  writeMergedManifest: (target: string, outDir: string) => Record<string, unknown>;
+};
+const tempOutDir = mkdtempSync(resolve(tmpdir(), 'arena-connections-manifest-'));
+writeMergedManifest('chrome', tempOutDir);
+const distributionManifest = readManifestJson(resolve(tempOutDir, 'manifest.json'));
+
+afterAll(() => {
+  rmSync(tempOutDir, { recursive: true, force: true });
+});
 
 describe('distribution scaffold', () => {
   it('documents unpacked installation and the OAuth connection path', () => {
