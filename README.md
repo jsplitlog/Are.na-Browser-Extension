@@ -1,31 +1,39 @@
 # Are.na Connections
 
-Are.na Connections is an unofficial Chrome side-panel extension that shows
-where the page you are viewing appears on Are.na. Click the extension button to
-find exact URL matches, see their originating channels and connection totals,
-and open any matching block on Are.na.
+Are.na Connections is an unofficial browser extension that shows where the page
+you are viewing appears on Are.na. Click the extension button to find exact URL
+matches, see their originating channels and connection totals, and open any
+matching block on Are.na.
 
 Lookups happen only when you click the extension button. The extension does not
 follow your browsing in the background.
 
 ## Requirements
 
-- Chrome 116 or later
+- Chrome 116 or later, Firefox 115 or later, or Safari 17 or later
+- Node.js `20.19+` or `22.12+` and npm, to build the extension
 - An Are.na Premium account (the v3 search endpoint requires Premium)
 
 ## Install in Chrome
 
 1. From this repository's **Code** menu, choose **Download ZIP**.
 2. Unzip the download somewhere you will keep it.
-3. Open `chrome://extensions` in Chrome.
-4. Turn on **Developer mode**.
-5. Click **Load unpacked**.
-6. Select the `dist/chrome` folder inside the unzipped download.
-7. Optionally pin **Are.na Connections** from Chrome's Extensions menu.
+3. In that folder, run `npm ci` and then `npm run build:chrome`.
+4. Open `chrome://extensions` in Chrome.
+5. Turn on **Developer mode**.
+6. Click **Load unpacked**.
+7. Select the `dist/chrome` folder the build just created.
+8. Optionally pin **Are.na Connections** from Chrome's Extensions menu.
 
 Chrome loads the extension directly from that folder, so do not delete it after
-installation. To update, replace the existing `dist/chrome` contents with those
-from a new download, then click **Reload** on the extension's card.
+installation. To update, pull or download the latest source, run the build
+again, then click **Reload** on the extension's card.
+
+## Install in Firefox or Safari
+
+Firefox and Safari need a build for their own target and a different loading
+step. See [docs/firefox.md](docs/firefox.md) and
+[docs/safari.md](docs/safari.md).
 
 ## Connect your Are.na account
 
@@ -46,8 +54,9 @@ Connections side panel will open with the matching blocks.
 
 ## Build from source
 
-Building is optional and only needed when changing the extension. It requires
-Node.js `20.19+` or `22.12+` and npm.
+`npm run build` builds all three targets into `dist/chrome`, `dist/firefox`,
+and `dist/safari`. Build one at a time with `npm run build:chrome`,
+`build:firefox`, or `build:safari`.
 
 ```sh
 npm ci
@@ -55,4 +64,4 @@ npm test
 npm run build
 ```
 
-Load the generated `dist/chrome` folder through the same Chrome steps above.
+`npm run package` writes a store-ready zip per target into `dist/`.
