@@ -1,0 +1,987 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		092CD01630268E84007DA001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 092CD01530268E84007DA001 /* AppDelegate.swift */; };
+		092CD01830268E84007DA001 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 092CD01730268E84007DA001 /* SceneDelegate.swift */; };
+		092CD01B30268E84007DA001 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 092CD01930268E84007DA001 /* LaunchScreen.storyboard */; };
+		092CD01E30268E84007DA001 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 092CD01C30268E84007DA001 /* Main.storyboard */; };
+		092CD02730268E84007DA001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 092CD02630268E84007DA001 /* AppDelegate.swift */; };
+		092CD02A30268E84007DA001 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 092CD02830268E84007DA001 /* Main.storyboard */; };
+		092CD03130268E84007DA001 /* Are.na Connections Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 092CD03030268E84007DA001 /* Are.na Connections Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		092CD03B30268E84007DA001 /* Are.na Connections Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 092CD03A30268E84007DA001 /* Are.na Connections Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		092CD04030268E84007DA001 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = 092CD00530268E83007DA001 /* Main.html */; };
+		092CD04130268E84007DA001 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = 092CD00530268E83007DA001 /* Main.html */; };
+		092CD04230268E84007DA001 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 092CD00730268E83007DA001 /* Icon.png */; };
+		092CD04330268E84007DA001 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 092CD00730268E83007DA001 /* Icon.png */; };
+		092CD04430268E84007DA001 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = 092CD00830268E83007DA001 /* Style.css */; };
+		092CD04530268E84007DA001 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = 092CD00830268E83007DA001 /* Style.css */; };
+		092CD04630268E84007DA001 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = 092CD00930268E83007DA001 /* Script.js */; };
+		092CD04730268E84007DA001 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = 092CD00930268E83007DA001 /* Script.js */; };
+		092CD04830268E84007DA001 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 092CD00A30268E83007DA001 /* ViewController.swift */; };
+		092CD04930268E84007DA001 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 092CD00A30268E83007DA001 /* ViewController.swift */; };
+		092CD04A30268E84007DA001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 092CD00B30268E83007DA001 /* Assets.xcassets */; };
+		092CD04B30268E84007DA001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 092CD00B30268E83007DA001 /* Assets.xcassets */; };
+		092CD04C30268E84007DA001 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 092CD00D30268E83007DA001 /* SafariWebExtensionHandler.swift */; };
+		092CD04D30268E84007DA001 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 092CD00D30268E83007DA001 /* SafariWebExtensionHandler.swift */; };
+		092CD06430268E84007DA001 /* background in Resources */ = {isa = PBXBuildFile; fileRef = 092CD05F30268E84007DA001 /* background */; };
+		092CD06530268E84007DA001 /* sidepanel in Resources */ = {isa = PBXBuildFile; fileRef = 092CD06030268E84007DA001 /* sidepanel */; };
+		092CD06630268E84007DA001 /* icons in Resources */ = {isa = PBXBuildFile; fileRef = 092CD06130268E84007DA001 /* icons */; };
+		092CD06730268E84007DA001 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 092CD06230268E84007DA001 /* manifest.json */; };
+		092CD06830268E84007DA001 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 092CD06330268E84007DA001 /* assets */; };
+		092CD06930268E84007DA001 /* background in Resources */ = {isa = PBXBuildFile; fileRef = 092CD05F30268E84007DA001 /* background */; };
+		092CD06A30268E84007DA001 /* sidepanel in Resources */ = {isa = PBXBuildFile; fileRef = 092CD06030268E84007DA001 /* sidepanel */; };
+		092CD06B30268E84007DA001 /* icons in Resources */ = {isa = PBXBuildFile; fileRef = 092CD06130268E84007DA001 /* icons */; };
+		092CD06C30268E84007DA001 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 092CD06230268E84007DA001 /* manifest.json */; };
+		092CD06D30268E84007DA001 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 092CD06330268E84007DA001 /* assets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		092CD03230268E84007DA001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 092CCFFF30268E83007DA001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 092CD02F30268E84007DA001;
+			remoteInfo = "Are.na Connections Extension (iOS)";
+		};
+		092CD03C30268E84007DA001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 092CCFFF30268E83007DA001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 092CD03930268E84007DA001;
+			remoteInfo = "Are.na Connections Extension (macOS)";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		092CD05330268E84007DA001 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				092CD03130268E84007DA001 /* Are.na Connections Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		092CD05A30268E84007DA001 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				092CD03B30268E84007DA001 /* Are.na Connections Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		092CD00630268E83007DA001 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = Base.lproj/Main.html; sourceTree = "<group>"; };
+		092CD00730268E83007DA001 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		092CD00830268E83007DA001 /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
+		092CD00930268E83007DA001 /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
+		092CD00A30268E83007DA001 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		092CD00B30268E83007DA001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		092CD00D30268E83007DA001 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		092CD01230268E83007DA001 /* Are.na Connections.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Are.na Connections.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		092CD01530268E84007DA001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		092CD01730268E84007DA001 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		092CD01A30268E84007DA001 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		092CD01D30268E84007DA001 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		092CD01F30268E84007DA001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		092CD02430268E84007DA001 /* Are.na Connections.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Are.na Connections.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		092CD02630268E84007DA001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		092CD02930268E84007DA001 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		092CD02B30268E84007DA001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		092CD03030268E84007DA001 /* Are.na Connections Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Are.na Connections Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		092CD03530268E84007DA001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		092CD03A30268E84007DA001 /* Are.na Connections Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Are.na Connections Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		092CD03F30268E84007DA001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		092CD05F30268E84007DA001 /* background */ = {isa = PBXFileReference; lastKnownFileType = folder; name = background; path = ../../../dist/safari/background; sourceTree = "<group>"; };
+		092CD06030268E84007DA001 /* sidepanel */ = {isa = PBXFileReference; lastKnownFileType = folder; name = sidepanel; path = ../../../dist/safari/sidepanel; sourceTree = "<group>"; };
+		092CD06130268E84007DA001 /* icons */ = {isa = PBXFileReference; lastKnownFileType = folder; name = icons; path = ../../../dist/safari/icons; sourceTree = "<group>"; };
+		092CD06230268E84007DA001 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../../dist/safari/manifest.json; sourceTree = "<group>"; };
+		092CD06330268E84007DA001 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = assets; path = ../../../dist/safari/assets; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		092CD00F30268E83007DA001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		092CD02130268E84007DA001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		092CD02D30268E84007DA001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		092CD03730268E84007DA001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		092CCFFE30268E83007DA001 = {
+			isa = PBXGroup;
+			children = (
+				092CD00330268E83007DA001 /* Shared (App) */,
+				092CD00C30268E83007DA001 /* Shared (Extension) */,
+				092CD01430268E83007DA001 /* iOS (App) */,
+				092CD02530268E84007DA001 /* macOS (App) */,
+				092CD03430268E84007DA001 /* iOS (Extension) */,
+				092CD03E30268E84007DA001 /* macOS (Extension) */,
+				092CD01330268E83007DA001 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		092CD00330268E83007DA001 /* Shared (App) */ = {
+			isa = PBXGroup;
+			children = (
+				092CD00A30268E83007DA001 /* ViewController.swift */,
+				092CD00B30268E83007DA001 /* Assets.xcassets */,
+				092CD00430268E83007DA001 /* Resources */,
+			);
+			path = "Shared (App)";
+			sourceTree = "<group>";
+		};
+		092CD00430268E83007DA001 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				092CD00530268E83007DA001 /* Main.html */,
+				092CD00730268E83007DA001 /* Icon.png */,
+				092CD00830268E83007DA001 /* Style.css */,
+				092CD00930268E83007DA001 /* Script.js */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		092CD00C30268E83007DA001 /* Shared (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				092CD05E30268E84007DA001 /* Resources */,
+				092CD00D30268E83007DA001 /* SafariWebExtensionHandler.swift */,
+			);
+			path = "Shared (Extension)";
+			sourceTree = "<group>";
+		};
+		092CD01330268E83007DA001 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				092CD01230268E83007DA001 /* Are.na Connections.app */,
+				092CD02430268E84007DA001 /* Are.na Connections.app */,
+				092CD03030268E84007DA001 /* Are.na Connections Extension.appex */,
+				092CD03A30268E84007DA001 /* Are.na Connections Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		092CD01430268E83007DA001 /* iOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				092CD01530268E84007DA001 /* AppDelegate.swift */,
+				092CD01730268E84007DA001 /* SceneDelegate.swift */,
+				092CD01930268E84007DA001 /* LaunchScreen.storyboard */,
+				092CD01C30268E84007DA001 /* Main.storyboard */,
+				092CD01F30268E84007DA001 /* Info.plist */,
+			);
+			path = "iOS (App)";
+			sourceTree = "<group>";
+		};
+		092CD02530268E84007DA001 /* macOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				092CD02630268E84007DA001 /* AppDelegate.swift */,
+				092CD02830268E84007DA001 /* Main.storyboard */,
+				092CD02B30268E84007DA001 /* Info.plist */,
+			);
+			path = "macOS (App)";
+			sourceTree = "<group>";
+		};
+		092CD03430268E84007DA001 /* iOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				092CD03530268E84007DA001 /* Info.plist */,
+			);
+			path = "iOS (Extension)";
+			sourceTree = "<group>";
+		};
+		092CD03E30268E84007DA001 /* macOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				092CD03F30268E84007DA001 /* Info.plist */,
+			);
+			path = "macOS (Extension)";
+			sourceTree = "<group>";
+		};
+		092CD05E30268E84007DA001 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				092CD05F30268E84007DA001 /* background */,
+				092CD06030268E84007DA001 /* sidepanel */,
+				092CD06130268E84007DA001 /* icons */,
+				092CD06230268E84007DA001 /* manifest.json */,
+				092CD06330268E84007DA001 /* assets */,
+			);
+			name = Resources;
+			path = "Shared (Extension)";
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		092CD01130268E83007DA001 /* Are.na Connections (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 092CD05430268E84007DA001 /* Build configuration list for PBXNativeTarget "Are.na Connections (iOS)" */;
+			buildPhases = (
+				092CD00E30268E83007DA001 /* Sources */,
+				092CD00F30268E83007DA001 /* Frameworks */,
+				092CD01030268E83007DA001 /* Resources */,
+				092CD05330268E84007DA001 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				092CD03330268E84007DA001 /* PBXTargetDependency */,
+			);
+			name = "Are.na Connections (iOS)";
+			packageProductDependencies = (
+			);
+			productName = "Are.na Connections (iOS)";
+			productReference = 092CD01230268E83007DA001 /* Are.na Connections.app */;
+			productType = "com.apple.product-type.application";
+		};
+		092CD02330268E84007DA001 /* Are.na Connections (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 092CD05B30268E84007DA001 /* Build configuration list for PBXNativeTarget "Are.na Connections (macOS)" */;
+			buildPhases = (
+				092CD02030268E84007DA001 /* Sources */,
+				092CD02130268E84007DA001 /* Frameworks */,
+				092CD02230268E84007DA001 /* Resources */,
+				092CD05A30268E84007DA001 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				092CD03D30268E84007DA001 /* PBXTargetDependency */,
+			);
+			name = "Are.na Connections (macOS)";
+			packageProductDependencies = (
+			);
+			productName = "Are.na Connections (macOS)";
+			productReference = 092CD02430268E84007DA001 /* Are.na Connections.app */;
+			productType = "com.apple.product-type.application";
+		};
+		092CD02F30268E84007DA001 /* Are.na Connections Extension (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 092CD05030268E84007DA001 /* Build configuration list for PBXNativeTarget "Are.na Connections Extension (iOS)" */;
+			buildPhases = (
+				092CD02C30268E84007DA001 /* Sources */,
+				092CD02D30268E84007DA001 /* Frameworks */,
+				092CD02E30268E84007DA001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Are.na Connections Extension (iOS)";
+			packageProductDependencies = (
+			);
+			productName = "Are.na Connections Extension (iOS)";
+			productReference = 092CD03030268E84007DA001 /* Are.na Connections Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		092CD03930268E84007DA001 /* Are.na Connections Extension (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 092CD05730268E84007DA001 /* Build configuration list for PBXNativeTarget "Are.na Connections Extension (macOS)" */;
+			buildPhases = (
+				092CD03630268E84007DA001 /* Sources */,
+				092CD03730268E84007DA001 /* Frameworks */,
+				092CD03830268E84007DA001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Are.na Connections Extension (macOS)";
+			packageProductDependencies = (
+			);
+			productName = "Are.na Connections Extension (macOS)";
+			productReference = 092CD03A30268E84007DA001 /* Are.na Connections Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		092CCFFF30268E83007DA001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					092CD01130268E83007DA001 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					092CD02330268E84007DA001 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					092CD02F30268E84007DA001 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					092CD03930268E84007DA001 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+				};
+			};
+			buildConfigurationList = 092CD00230268E83007DA001 /* Build configuration list for PBXProject "Are.na Connections" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 092CCFFE30268E83007DA001;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 092CD01330268E83007DA001 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				092CD01130268E83007DA001 /* Are.na Connections (iOS) */,
+				092CD02330268E84007DA001 /* Are.na Connections (macOS) */,
+				092CD02F30268E84007DA001 /* Are.na Connections Extension (iOS) */,
+				092CD03930268E84007DA001 /* Are.na Connections Extension (macOS) */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		092CD01030268E83007DA001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				092CD04230268E84007DA001 /* Icon.png in Resources */,
+				092CD01B30268E84007DA001 /* LaunchScreen.storyboard in Resources */,
+				092CD04030268E84007DA001 /* Main.html in Resources */,
+				092CD04630268E84007DA001 /* Script.js in Resources */,
+				092CD04A30268E84007DA001 /* Assets.xcassets in Resources */,
+				092CD01E30268E84007DA001 /* Main.storyboard in Resources */,
+				092CD04430268E84007DA001 /* Style.css in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		092CD02230268E84007DA001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				092CD04330268E84007DA001 /* Icon.png in Resources */,
+				092CD04530268E84007DA001 /* Style.css in Resources */,
+				092CD02A30268E84007DA001 /* Main.storyboard in Resources */,
+				092CD04730268E84007DA001 /* Script.js in Resources */,
+				092CD04B30268E84007DA001 /* Assets.xcassets in Resources */,
+				092CD04130268E84007DA001 /* Main.html in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		092CD02E30268E84007DA001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				092CD06D30268E84007DA001 /* assets in Resources */,
+				092CD06C30268E84007DA001 /* manifest.json in Resources */,
+				092CD06B30268E84007DA001 /* icons in Resources */,
+				092CD06A30268E84007DA001 /* sidepanel in Resources */,
+				092CD06930268E84007DA001 /* background in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		092CD03830268E84007DA001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				092CD06830268E84007DA001 /* assets in Resources */,
+				092CD06730268E84007DA001 /* manifest.json in Resources */,
+				092CD06630268E84007DA001 /* icons in Resources */,
+				092CD06530268E84007DA001 /* sidepanel in Resources */,
+				092CD06430268E84007DA001 /* background in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		092CD00E30268E83007DA001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				092CD04830268E84007DA001 /* ViewController.swift in Sources */,
+				092CD01630268E84007DA001 /* AppDelegate.swift in Sources */,
+				092CD01830268E84007DA001 /* SceneDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		092CD02030268E84007DA001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				092CD04930268E84007DA001 /* ViewController.swift in Sources */,
+				092CD02730268E84007DA001 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		092CD02C30268E84007DA001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				092CD04C30268E84007DA001 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		092CD03630268E84007DA001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				092CD04D30268E84007DA001 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		092CD03330268E84007DA001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 092CD02F30268E84007DA001 /* Are.na Connections Extension (iOS) */;
+			targetProxy = 092CD03230268E84007DA001 /* PBXContainerItemProxy */;
+		};
+		092CD03D30268E84007DA001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 092CD03930268E84007DA001 /* Are.na Connections Extension (macOS) */;
+			targetProxy = 092CD03C30268E84007DA001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		092CD00530268E83007DA001 /* Main.html */ = {
+			isa = PBXVariantGroup;
+			children = (
+				092CD00630268E83007DA001 /* Base */,
+			);
+			name = Main.html;
+			sourceTree = "<group>";
+		};
+		092CD01930268E84007DA001 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				092CD01A30268E84007DA001 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		092CD01C30268E84007DA001 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				092CD01D30268E84007DA001 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		092CD02830268E84007DA001 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				092CD02930268E84007DA001 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		092CD04E30268E84007DA001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		092CD04F30268E84007DA001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		092CD05130268E84007DA001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Are.na Connections Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "me.jsplit.arena-connections.Extension";
+				PRODUCT_NAME = "Are.na Connections Extension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		092CD05230268E84007DA001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Are.na Connections Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "me.jsplit.arena-connections.Extension";
+				PRODUCT_NAME = "Are.na Connections Extension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		092CD05530268E84007DA001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Are.na Connections";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "me.jsplit.arena-connections";
+				PRODUCT_NAME = "Are.na Connections";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		092CD05630268E84007DA001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Are.na Connections";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "me.jsplit.arena-connections";
+				PRODUCT_NAME = "Are.na Connections";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		092CD05830268E84007DA001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Are.na Connections Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "me.jsplit.arena-connections.Extension";
+				PRODUCT_NAME = "Are.na Connections Extension";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		092CD05930268E84007DA001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Are.na Connections Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "me.jsplit.arena-connections.Extension";
+				PRODUCT_NAME = "Are.na Connections Extension";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		092CD05C30268E84007DA001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Are.na Connections";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "me.jsplit.arena-connections";
+				PRODUCT_NAME = "Are.na Connections";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		092CD05D30268E84007DA001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Are.na Connections";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "me.jsplit.arena-connections";
+				PRODUCT_NAME = "Are.na Connections";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		092CD00230268E83007DA001 /* Build configuration list for PBXProject "Are.na Connections" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				092CD04E30268E84007DA001 /* Debug */,
+				092CD04F30268E84007DA001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		092CD05030268E84007DA001 /* Build configuration list for PBXNativeTarget "Are.na Connections Extension (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				092CD05130268E84007DA001 /* Debug */,
+				092CD05230268E84007DA001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		092CD05430268E84007DA001 /* Build configuration list for PBXNativeTarget "Are.na Connections (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				092CD05530268E84007DA001 /* Debug */,
+				092CD05630268E84007DA001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		092CD05730268E84007DA001 /* Build configuration list for PBXNativeTarget "Are.na Connections Extension (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				092CD05830268E84007DA001 /* Debug */,
+				092CD05930268E84007DA001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		092CD05B30268E84007DA001 /* Build configuration list for PBXNativeTarget "Are.na Connections (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				092CD05C30268E84007DA001 /* Debug */,
+				092CD05D30268E84007DA001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 092CCFFF30268E83007DA001 /* Project object */;
+}

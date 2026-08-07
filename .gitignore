@@ -6,3 +6,9 @@ node_modules/
 # folders and packaged zips. Not committed — see the WS4 report for the
 # tradeoff this has with README's current "Download ZIP" install flow.
 dist/
+
+# Xcode per-user state and build output. The generated project under apple/ is
+# tracked (see docs/safari.md); these are not.
+xcuserdata/
+*.xcuserstate
+DerivedData/
