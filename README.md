@@ -10,7 +10,9 @@ follow your browsing in the background.
 
 ## Requirements
 
-- Chrome 116 or later, Firefox 115 or later, or Safari 17 or later
+- Chrome 116 or later, Firefox 115 or later, or Safari 18 or later (the
+  documented Develop → Add Temporary Extension flow; Safari 16.4–17 works via
+  the Xcode route in [docs/safari.md](docs/safari.md))
 - Node.js `20.19+` or `22.12+` and npm, to build the extension
 - An Are.na Premium account (the v3 search endpoint requires Premium)
 
@@ -106,8 +108,9 @@ Simulator only unless you have an Apple Developer Program membership — iOS
 extensions ship only inside an App Store app. Build and run the
 **Are.na Connections (iOS)** scheme from `apple/`, then enable the extension in
 Settings → Apps → Safari → Extensions. Steps and current limitations are in
-[docs/ios-findings.md](docs/ios-findings.md); note **OAuth sign-in does not
-complete on iOS**, so sign in with an access token there.
+[docs/ios-findings.md](docs/ios-findings.md). On iOS, OAuth sign-in finishes
+when you **reopen the extension** after approving on Are.na — the popup
+completes the exchange on open. Token paste-in also works as a fallback.
 
 ## Connect your Are.na account
 
@@ -120,8 +123,8 @@ complete on iOS**, so sign in with an access token there.
 
 On Safari the card also offers an access token field. Generate one at
 [are.na/settings/personal-access-tokens](https://www.are.na/settings/personal-access-tokens)
-and paste it in. That path is the one to use on iOS, where OAuth sign-in does
-not currently complete.
+and paste it in. On iOS, after approving on Are.na, reopen the extension —
+sign-in completes on open and the approval tab closes itself.
 
 The extension can read the Are.na data available to your account, but cannot
 create, edit, or delete anything. Signing out removes the saved access token

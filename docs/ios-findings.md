@@ -77,9 +77,13 @@ Two issues found:
   full-height sheet. Cosmetic only. Target-scope any fix to `popup-mode` so
   the sidebar layout is untouched.
 
-### 3. Lifecycle — **this is the real problem, and it breaks OAuth**
+### 3. Lifecycle — **this was the real problem** (superseded: fixed below)
 
-Confirmed 2026-08-08: **OAuth sign-in does not complete on iOS.** Tapping
+Historical narrative — the sections through "the content-script attempt"
+describe the investigation; the resolution is "The popup-driven completion"
+further down, and the top-of-file verdict is the current state.
+
+Originally confirmed 2026-08-08: OAuth sign-in did not complete on iOS. Tapping
 "Sign in with Are.na" opens the auth tab, and the flow then dies silently —
 reopening the popup shows the sign-in card again, with no token and no error.
 
@@ -209,9 +213,9 @@ owner, which no agent should do:
 
 - [ ] Lookup hit / miss on a real page
 - [ ] Connections expand
-- [ ] OAuth sign-in on iOS — the delivery mechanism is probed working (see
-      risk area 3); tap Authorize, reopen the extension, and confirm the
-      signed-in state to close this out.
+- [x] OAuth sign-in on iOS — **confirmed end to end 2026-08-08**: j
+      authorized on are.na, and reopening the extension completed the
+      exchange and rendered the signed-in connections view (iOS 26.5).
 - [ ] Token paste-in
 - [ ] Sign-out, and "Remember device" persistence across an app restart
 - [ ] Background-termination behavior mid-lookup (risk area 3)

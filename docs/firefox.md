@@ -155,8 +155,11 @@ whitespace, both when validating the save and when matching at authorize
 time. The field currently holds, on one line:
 
 ```
-https://poolkoglmiobmahcbamkbhljhgeooajm.chromiumapp.org/oauth2 https://0ad619d4912d78649cce9efc30fd890eb36ef69e.extensions.allizom.org/oauth2
+https://poolkoglmiobmahcbamkbhljhgeooajm.chromiumapp.org/oauth2 https://0ad619d4912d78649cce9efc30fd890eb36ef69e.extensions.allizom.org/oauth2 https://jsplitlog.github.io/arena-connections/oauth2.html
 ```
+
+(The third entry is Safari's hosted redirect, registered 2026-08-07 — see
+docs/safari.md.)
 
 If a future URI ever fails to save or fails to match, the fallback is a
 separate Are.na OAuth application per target, which means moving

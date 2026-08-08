@@ -3,6 +3,14 @@
 Status: WS0/WS1/WS2/WS4 landed; WS3 (iOS) is the only open workstream — evaluated 2026-08-07
 Owner: j
 
+> **Superseded 2026-08-08.** Everything below is the historical record; the
+> current state is: all workstreams including WS3 (iOS) are **done**. Safari
+> OAuth is live (`supportsOAuth: true`) on macOS and iOS via popup-driven
+> completion; `apple/` is tracked in git; Firefox, Safari macOS, and iOS
+> Simulator smoke runs are recorded passed (docs/firefox.md, docs/safari.md,
+> docs/ios-findings.md). References below to a committed `public/manifest.json`
+> predate the base+overlay split.
+
 ## Progress evaluation — 2026-08-07
 
 Verified against the branch (not just the commit messages): `npm test` passes
@@ -397,10 +405,10 @@ first, since its targets reference `dist/safari/` directly).
 
 - [ ] Lookup hit and miss via the action popup (no sidebar on this target).
 - [ ] Connections expand inside the popup without overflow or double-scroll.
-- [ ] Sign in via token paste (OAuth may be gated behind `supportsOAuth` until
-      WS2's tab-based flow lands — check the sign-in card reflects that).
-- [ ] Sign in via OAuth, once implemented — confirm the Safari redirect is
-      registered on the Are.na OAuth app first.
+- [ ] Sign in via token paste (rendered beside the OAuth button on Safari —
+      `offersTokenSignIn`).
+- [ ] Sign in via OAuth (tab-based flow; redirect registered on the Are.na
+      OAuth app — see docs/safari.md).
 - [ ] Sign out.
 - [ ] Remember-me persistence across a Safari restart.
 - [ ] Panel (popup) reopen after browser restart.

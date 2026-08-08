@@ -1,6 +1,8 @@
 # UI Refresh Plan — migrating to are.na's current design tokens
 
-Status: draft — 2026-08-07 (T1 landed 2026-08-08)
+Status: T1 and T2 landed 2026-08-08 (T3 visual QA done across Safari macOS/iOS
+in the cross-browser PR; closed-channel resting background revised to plain
+surface after j's browser check)
 Owner: j
 Companion to: `docs/cross-browser-plan.md` (any restyle lands on all three
 targets at once now)

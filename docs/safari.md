@@ -319,9 +319,10 @@ Also note Are.na ships its *own* Safari extension named "Are.na"; ours is
       no url, e.g. on a Safari internal page).
 - [ ] Navigate to a page known to have Are.na connections, open the popup →
       lookup runs, results render, connections backfill.
-- [ ] Sign out, open popup → token-paste form appears (not the OAuth
-      button), submit an invalid token → inline error, submit a valid token
-      → signs in and re-runs the lookup for the last-viewed page.
+- [ ] Sign out, open popup → both the OAuth button and the token-paste form
+      appear (Safari renders both — `supportsOAuth` and `offersTokenSignIn`
+      are both true), submit an invalid token → inline error, submit a valid
+      token → signs in and re-runs the lookup for the last-viewed page.
 - [ ] "Remember device" checkbox persists across popup close/reopen and
       Safari restart.
 - [ ] Re-open the popup on a different tab → shows that tab's connections,
