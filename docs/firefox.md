@@ -40,6 +40,10 @@ Add-on** → select `dist/firefox/manifest.json`. Temporary installs (either
 method) are removed when Firefox closes, and the sidebar action, background
 script, and icons all behave the same as a signed install.
 
+For an install that **survives quitting Firefox**, see "Getting a signed
+.xpi that persists" below — signing is the only way to do it on release
+Firefox.
+
 ## AMO signing
 
 Firefox requires every extension — even ones you only distribute yourself,
@@ -60,11 +64,53 @@ Two paths, both starting from the same AMO developer account
   AMO search/browse. You host the signed `.xpi` yourself and distribute
   the link directly; Firefox will install and update it from that URL.
 
-Either path needs `web-ext lint` clean (it is) before submission. **j's
-decision:** listed vs. unlisted. Given the extension already has a
-"download ZIP → load unpacked" distribution model for Chrome, unlisted is
-the closer match — but it does mean self-hosting the signed `.xpi` and its
-update manifest.
+Either path needs `web-ext lint` clean (it is) before submission.
+**Decision: unlisted** — the goal is a build that survives a Firefox
+restart, not a public listing.
+
+### Getting a signed .xpi that persists
+
+Signing is the *only* way to install permanently on release Firefox.
+`xpinstall.signatures.required=false` in `about:config` is ignored there; it
+works only on Developer Edition, Nightly, and ESR.
+
+1. Create a free account at https://addons.mozilla.org/developers/ (no
+   review, no public listing for unlisted submissions).
+2. Generate API credentials: Developer Hub → **Manage API Keys** → issue a
+   JWT issuer and secret.
+3. Export them — **never commit these; they are account credentials**:
+
+   ```sh
+   export WEB_EXT_API_KEY='user:12345678:123'
+   export WEB_EXT_API_SECRET='...'
+   ```
+
+4. Build, sign, and collect the artifact:
+
+   ```sh
+   npm run sign:firefox
+   ```
+
+   That runs `web-ext sign --channel unlisted`, which uploads
+   `dist/firefox`, waits for Mozilla's automated validation (usually a
+   minute or two), and drops the signed `.xpi` in `dist/`.
+
+5. Install it: open `about:addons` → gear → **Install Add-on From File…** →
+   select the signed `.xpi`. This is the same dialog that rejected the raw
+   `manifest.json` earlier — it wants exactly this artifact. The add-on now
+   survives restarts.
+
+Notes:
+
+- **Every signed upload needs a unique version.** Re-signing `0.2.0` is
+  rejected; bump `version` in `package.json` *and* `public/manifest.base.json`
+  (they must agree) before re-signing.
+- Signing depends on `browser_specific_settings.gecko.id` being stable —
+  which is also what pins the OAuth redirect URI below. Changing it breaks
+  both.
+- Auto-updates for a self-hosted `.xpi` need an `update_url` and a hosted
+  update manifest. Without one, updating means re-installing the new file by
+  hand. Fine for personal use; worth adding if others start using it.
 
 ## OAuth redirect URI — registered, working
 

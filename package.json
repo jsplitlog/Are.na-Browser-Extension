@@ -10,6 +10,7 @@
     "build:safari": "tsc --noEmit && TARGET=safari vite build && node scripts/build-manifest.mjs safari",
     "dev": "TARGET=chrome vite build --watch",
     "lint:firefox": "web-ext lint --source-dir dist/firefox",
+    "sign:firefox": "npm run build:firefox && web-ext sign --source-dir dist/firefox --artifacts-dir dist --channel unlisted",
     "package": "node scripts/package.mjs",
     "test": "vitest run --root .",
     "test:watch": "vitest --root ."
