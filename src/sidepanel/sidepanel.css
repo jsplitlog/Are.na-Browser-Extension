@@ -31,14 +31,28 @@ body {
 
 /* Safari has no sidebar API — this page runs as an action popup there (see
  * src/sidepanel/sidepanel.ts, which adds this class only when __TARGET__ ===
- * 'safari'). Popups don't resize like a sidebar, so they need explicit
- * dimensions; Chrome and Firefox never get this class and keep the resizable
- * sidebar layout above completely unscoped. */
+ * 'safari'). On macOS the popover sizes itself from the page, so it needs an
+ * explicit box; Chrome and Firefox never get this class and keep the
+ * resizable sidebar layout above completely unscoped. */
 body.popup-mode {
   max-height: 600px;
   min-height: 0;
   overflow-y: auto;
   width: 380px;
+}
+
+/* iOS presents the same popup as a sheet whose webview already spans the
+ * device viewport, so the macOS popover box must not apply: capping at 600px
+ * strands dead space below the list at the full-height detent, and the fixed
+ * 380px width leaves a gutter on the right. Touch is the discriminator —
+ * macOS popovers are pointer-driven, the sheet is not. dvh tracks the
+ * sheet's detent as it expands (iOS floor is 16.4, which supports it). */
+@media (hover: none) and (pointer: coarse) {
+  body.popup-mode {
+    height: 100dvh;
+    max-height: none;
+    width: 100%;
+  }
 }
 
 @media (max-width: 640px) {

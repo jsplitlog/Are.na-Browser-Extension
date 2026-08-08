@@ -7,13 +7,18 @@ is needed for Simulator work.
 Also re-run 2026-08-08 on **iOS 26.5** (iPhone 17) for the OAuth work below;
 behaviour matched 17.2, so the old runtime was not hiding anything.
 
-**Verdict (updated 2026-08-08): the extension works on iOS, and OAuth now has
-a working delivery path.** The same `dist/safari` build that runs in Safari on
-macOS loads, enables, and renders on iOS with no iOS-specific code. The
-original lifecycle failure (risk area 3) was root-caused — iOS never delivers
+**Verdict (final, 2026-08-08): iOS OAuth works end to end.** The original
+lifecycle failure (risk area 3) was root-caused — iOS never delivers
 `tabs.onUpdated` to the background page — and answered with popup-driven
-completion, probed working on the Simulator. Sole remaining unprobed step:
-the final code exchange against are.na, which needs a real Authorize tap.
+completion plus state-matched candidate selection (so stale parked callback
+tabs can't poison a retry). Confirmed with a real authorization on the
+iOS 26.5 Simulator: j authorized on are.na, and on the next popup open the
+extension matched the parked callback, exchanged the code, and rendered the
+signed-in connections view. One operational lesson from getting there: the
+extension resources are frozen into the app at `xcodebuild` time, so **a
+stale installed app silently reproduces old bugs** — always rebuild and
+reinstall after `npm run build:safari` before judging behavior in a
+Simulator.
 
 ## How to reproduce
 
