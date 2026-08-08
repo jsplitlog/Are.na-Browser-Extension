@@ -82,12 +82,26 @@ describe('arena API', () => {
   });
 
   it('retries 5xx once and respects a request budget', async () => {
-    const fetchMock = vi.fn().mockResolvedValueOnce(json({}, 500)).mockResolvedValueOnce(json({ data: [] }));
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(json({}, 500))
+      .mockResolvedValueOnce(json({ data: [{ id: 1, source: { url: 'https://example.com/a' } }] }));
     vi.stubGlobal('fetch', fetchMock);
     buildQueries.mockReturnValueOnce(['specific query']);
-    await searchBlocks('https://example.com/a', createRequestBudget(2));
+    // Budget 2 is consumed by the retried public pass; the scope=my pass is
+    // budget-blocked before fetching, which is fine because results exist.
+    await expect(searchBlocks('https://example.com/a', createRequestBudget(2)))
+      .resolves.toEqual([expect.objectContaining({ id: 1 })]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     await expect(searchBlocks('https://example.com/a', createRequestBudget(0))).rejects.toMatchObject({ kind: 'network' } satisfies Partial<ArenaError>);
+  });
+
+  it('propagates a scope=my failure when the public pass found nothing, so no false miss is cached', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(json({ data: [] }))
+      .mockResolvedValue(json({}, 429));
+    vi.stubGlobal('fetch', fetchMock);
+    buildQueries.mockReturnValueOnce(['specific query']);
+    await expect(searchBlocks('https://example.com/a')).rejects.toMatchObject({ kind: 'rate_limited' });
   });
 
   it.each([403, 408, 429])('retries and surfaces HTTP %s as an error, never a miss', async (status) => {

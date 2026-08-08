@@ -79,7 +79,11 @@ const route = async (request: Request): Promise<Response> => {
 // redirect lands, so this is the only thing left to finish sign-in. No-op on
 // Chrome and Firefox, where chrome.identity resolves the flow in-process.
 platform.registerAuthCallback((callbackUrl) => {
-  void completeOAuth(callbackUrl).catch(() => undefined);
+  // Candidates path, not completeOAuth directly: it matches state before the
+  // single-use pending record is consumed, so a mismatched callback (a stale
+  // reloaded tab, a second in-flight attempt's older tab, or any webpage
+  // navigating to the redirect URL) can't burn a live flow.
+  void completeOAuthFromCandidates([callbackUrl]).catch(() => undefined);
 });
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {

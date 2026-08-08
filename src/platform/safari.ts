@@ -24,13 +24,18 @@ import type { PlatformAdapter } from './index';
 // slash by Pages and fail that check.
 const SAFARI_OAUTH_REDIRECT_URL = 'https://jsplitlog.github.io/arena-connections/oauth2.html';
 
-const requireConfiguredRedirectUrl = (): string => {
-  if (!SAFARI_OAUTH_REDIRECT_URL) {
-    throw new Error(
-      'Safari OAuth redirect is not configured yet (see the TODO in src/platform/safari.ts). Use token sign-in.',
-    );
+/** Exact origin+pathname test — the callback carries ?code=&state= on top of
+ *  the redirect, but nothing beyond the path may vary. A plain startsWith
+ *  would also match lookalike paths (…/oauth2.htmlfoo) and let any page get
+ *  arbitrary tabs closed by navigating them near the redirect URL. */
+const isAuthCallbackUrl = (url: string | undefined): url is string => {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}` === SAFARI_OAUTH_REDIRECT_URL;
+  } catch {
+    return false;
   }
-  return SAFARI_OAUTH_REDIRECT_URL;
 };
 
 export const safariPlatform: PlatformAdapter = {
@@ -42,7 +47,7 @@ export const safariPlatform: PlatformAdapter = {
   openPanel: async () => {
     // No-op: Safari opens the action popup itself; there is nothing to trigger here.
   },
-  getRedirectURL: () => requireConfiguredRedirectUrl(),
+  getRedirectURL: () => SAFARI_OAUTH_REDIRECT_URL,
   // Opens the authorize tab and returns — deliberately without waiting for the
   // callback. Waiting was the original design and it fails on iOS: opening the
   // tab dismisses the popup sheet, and with no UI attached iOS suspends the
@@ -55,13 +60,10 @@ export const safariPlatform: PlatformAdapter = {
   },
   completesAuthInBackground: true,
   registerAuthCallback: (onCallback) => {
-    const redirectUrl = SAFARI_OAUTH_REDIRECT_URL;
-    if (!redirectUrl) return;
-    // Prefix match: the callback carries ?code=&state= on top of the redirect.
     // The event's own tabId identifies the auth tab, so nothing has to be
     // remembered across the suspension to close it afterwards.
     chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-      if (!changeInfo.url?.startsWith(redirectUrl)) return;
+      if (!isAuthCallbackUrl(changeInfo.url)) return;
       onCallback(changeInfo.url);
       void chrome.tabs.remove(tabId).catch(() => undefined);
     });
@@ -97,12 +99,13 @@ export const resolveActivePageForPopup = async (): Promise<void> => {
  *  parked on the callback URL and, if one exists, hands that URL to the
  *  background over runtime messaging (which does revive the page — it is the
  *  wake path every lookup already rides). macOS keeps the `tabs.onUpdated`
- *  fast path above; this doubles as its recovery path, and `completeOAuth`'s
- *  single-use pending record makes the two racing harmless. */
+ *  fast path above; this doubles as its recovery path, and core/auth.ts
+ *  serializes completions so the two paths racing cannot double-spend the
+ *  single-use pending record. */
 export const findPendingAuthCallbackTabs = async (): Promise<Array<{ tabId: number; callbackUrl: string }>> => {
   const tabs = await chrome.tabs.query({});
   return tabs.flatMap((tab) =>
-    tab.id !== undefined && tab.url?.startsWith(SAFARI_OAUTH_REDIRECT_URL)
+    tab.id !== undefined && isAuthCallbackUrl(tab.url)
       ? [{ tabId: tab.id, callbackUrl: tab.url }]
       : []);
 };

@@ -195,6 +195,7 @@ export const searchBlocks = async (url: string, budget?: RequestBudget): Promise
       }
     }
   };
+  let myScopeError: unknown = null;
   for (const query of buildQueries(url).slice(0, 2)) {
     const params = { query, type: TYPES, per: String(SEARCH_PER_PAGE) };
     collect(await request('/search', params, true, budget));
@@ -204,12 +205,16 @@ export const searchBlocks = async (url: string, budget?: RequestBudget): Promise
     // not fail a lookup the public pass already answered.
     try {
       collect(await request('/search', { ...params, scope: 'my' }, true, budget));
-    } catch {
+    } catch (error) {
       // Budget exhaustion or a transient error here costs private-channel
-      // rows, not the whole result.
+      // rows, not the whole result — unless nothing was found at all, in
+      // which case returning [] would let the caller cache a 24h "miss" for
+      // a search that never ran to completion (see the throw below).
+      myScopeError = myScopeError ?? error;
     }
     if (found.size >= 5) break;
   }
+  if (!found.size && myScopeError !== null) throw myScopeError;
   return [...found.values()];
 };
 

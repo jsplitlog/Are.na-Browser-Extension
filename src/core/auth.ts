@@ -70,10 +70,13 @@ export const getAuthState = async (): Promise<AuthState> => {
   return { signedIn: false, displayName: null, userSlug: null, avatarUrl: null, tier: null };
 };
 
-/** Removes local and memory-only credentials. Revoking at Are.na must be done by the user. */
+/** Removes local and memory-only credentials. Revoking at Are.na must be done by the user.
+ *  Also drops any abandoned pending OAuth flow: storeAccessToken routes every
+ *  successful sign-in through here, so a token paste can't leave a stale
+ *  pending record (and, on Safari, its parked tab) primed to complete later. */
 export const signOut = async (): Promise<void> => {
   await Promise.all([
-    sessionStorage().remove([TOKEN_KEY, ACCOUNT_KEY]),
+    sessionStorage().remove([TOKEN_KEY, ACCOUNT_KEY, PENDING_OAUTH_KEY]),
     localStorage().remove([TOKEN_KEY, ACCOUNT_KEY]),
     clearCache(),
   ]);
@@ -128,10 +131,10 @@ const storeAccessToken = async (token: string, remember: boolean): Promise<Valid
   return account;
 };
 
-/** Signs in with a manually-pasted Are.na personal access token. This is the
- *  universal fallback for targets where `platform.supportsOAuth` is false
- *  (currently Safari — see src/platform/safari.ts) and never depends on the
- *  platform adapter, so it works identically on every target. */
+/** Signs in with a manually-pasted Are.na personal access token. This never
+ *  depends on the platform adapter, so it works identically on every target;
+ *  Safari keeps it beside the OAuth button (`offersTokenSignIn`) because its
+ *  OAuth flow depends on a page we host. */
 export const signInWithToken = async (token: string, remember: boolean): Promise<ValidatedAccount> => {
   const credential = token.trim();
   if (!credential) throw new AuthError('invalid_token', 'Enter an access token.');
@@ -205,10 +208,25 @@ export const beginOAuth = async (remember: boolean): Promise<string> => {
   return `https://www.are.na/oauth/authorize?${params.toString()}`;
 };
 
+/** Serializes completions: the macOS tabs.onUpdated fast path and a popup
+ *  completeOAuth message can race on the same background page, and both
+ *  reading the pending record before either's remove lands would double-spend
+ *  the code. The second caller instead waits and finds the record consumed. */
+let completionChain: Promise<unknown> = Promise.resolve();
+
+const serializeCompletion = <T>(run: () => Promise<T>): Promise<T> => {
+  const next = completionChain.then(run, run);
+  completionChain = next.catch(() => undefined);
+  return next;
+};
+
 /** Validates a callback URL against the persisted pending flow and exchanges the
  *  code for a token. Safe to call from a top-level listener on a revived
  *  background page — it reads its state from storage, not from a closure. */
-export const completeOAuth = async (callbackUrl: string): Promise<ValidatedAccount> => {
+export const completeOAuth = (callbackUrl: string): Promise<ValidatedAccount> =>
+  serializeCompletion(() => completeOAuthLocked(callbackUrl));
+
+const completeOAuthLocked = async (callbackUrl: string): Promise<ValidatedAccount> => {
   const pending = await readPendingOAuth();
   if (!pending) throw new AuthError('oauth_state', 'No sign-in was in progress.');
   // Clear first: a code is single-use, so a retried or duplicated callback must
@@ -268,21 +286,31 @@ export const completeOAuth = async (callbackUrl: string): Promise<ValidatedAccou
  *  match proceeds to the consuming path. No match returns null with the
  *  pending record untouched: parked strangers are garbage to sweep, not an
  *  error, and a flow started elsewhere can still finish. */
-export const completeOAuthFromCandidates = async (callbackUrls: string[]): Promise<ValidatedAccount | null> => {
-  const pending = await readPendingOAuth();
-  if (!pending) return null;
-  const match = callbackUrls.find((url) => {
-    try {
-      const callback = new URL(url);
-      return `${callback.origin}${callback.pathname}` === pending.redirectUri
-        && callback.searchParams.get('state') === pending.state;
-    } catch {
-      return false;
+export const completeOAuthFromCandidates = (callbackUrls: string[]): Promise<ValidatedAccount | null> =>
+  serializeCompletion(async () => {
+    if (!callbackUrls.length) return null;
+    const pending = await readPendingOAuth();
+    if (!pending) {
+      // Parked callback tabs with nothing to complete: the user came back from
+      // are.na but the pending record is gone (expired session storage, or a
+      // completed/abandoned flow). Say so rather than silently re-showing the
+      // sign-in card — the caller sweeps the dead tabs either way.
+      throw new AuthError('oauth_state', 'Sign-in expired — start it again.');
     }
+    const match = callbackUrls.find((url) => {
+      try {
+        const callback = new URL(url);
+        return `${callback.origin}${callback.pathname}` === pending.redirectUri
+          && callback.searchParams.get('state') === pending.state;
+      } catch {
+        return false;
+      }
+    });
+    // No state match: every candidate is a stale tab from an earlier attempt.
+    // Leave the pending record intact — the real callback may still arrive.
+    if (!match) return null;
+    return completeOAuthLocked(match);
   });
-  if (!match) return null;
-  return completeOAuth(match);
-};
 
 /** Runs Authorization Code + PKCE. The client ID must be registered for this
  *  extension's exact redirect.

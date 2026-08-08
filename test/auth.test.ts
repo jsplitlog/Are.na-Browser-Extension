@@ -276,9 +276,24 @@ describe('resumable OAuth (beginOAuth / completeOAuth)', () => {
     expect(await auth.getToken()).toBe('survivor');
   });
 
-  it('resolves null with no pending flow instead of erroring on parked strangers', async () => {
+  it('reports an expired flow when callbacks are parked but nothing is pending', async () => {
+    // The user came back from are.na with a callback tab open, but the pending
+    // record is gone (expired storage, completed elsewhere): silence here reads
+    // as the extension ignoring them, so it must surface as an error.
     await expect(auth.completeOAuthFromCandidates([
       `${redirect}?code=c&state=whatever`,
-    ])).resolves.toBeNull();
+    ])).rejects.toMatchObject({ kind: 'oauth_state' });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('clears an abandoned pending flow when a token sign-in supersedes it', async () => {
+    await beginAndReadState(false);
+    expect(session.arenaPendingOAuth).toBeDefined();
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { slug: 'me' } }), { status: 200 }));
+
+    await auth.signInWithToken('pasted-token', false);
+
+    expect(session.arenaPendingOAuth).toBeUndefined();
   });
 });

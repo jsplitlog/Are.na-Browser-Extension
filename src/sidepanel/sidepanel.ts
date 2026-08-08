@@ -518,7 +518,14 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 const completeParkedOAuth = async (): Promise<string | null> => {
   const parked = await findPendingAuthCallbackTabs();
   if (!parked.length) return null;
-  const response = await send({ kind: 'completeOAuth', callbackUrls: parked.map(({ callbackUrl }) => callbackUrl) });
+  let response: Response;
+  try {
+    response = await send({ kind: 'completeOAuth', callbackUrls: parked.map(({ callbackUrl }) => callbackUrl) });
+  } catch {
+    // Transport failure: the completion never ran, so the callback may still
+    // be spendable — leave the tabs parked so reopening the popup retries.
+    return 'Could not finish signing in. Reopen the extension to try again.';
+  }
   await closeAuthCallbackTabs(parked.map(({ tabId }) => tabId));
   return response.kind === 'error' ? response.message : null;
 };

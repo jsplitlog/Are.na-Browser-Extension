@@ -178,9 +178,8 @@ describe('safari adapter', () => {
   });
 
   it('never touches chrome.identity from getRedirectURL or launchAuthFlow', async () => {
-    // The current WS2 stub throws its own "not implemented" error for both; a real
-    // implementation might instead resolve a tab-based-flow URL. Either way is fine —
-    // only reaching into chrome.identity is not.
+    // Safari's flow is tab-based (a hosted redirect page); reaching into
+    // chrome.identity — which does not exist on Safari — is the only failure.
     await Promise.allSettled([
       Promise.resolve().then(() => safariPlatform.getRedirectURL()),
       Promise.resolve().then(() => safariPlatform.launchAuthFlow('https://www.are.na/oauth/authorize')),
@@ -193,11 +192,10 @@ describe('safari adapter', () => {
     });
   });
 
-  it('declares supportsOAuth as a plain boolean capability flag', () => {
-    // The plan explicitly allows this to be false (token paste-in only) until the
-    // tab-based flow lands, and to flip true once it does — either is valid, so this
-    // only pins the type, not the current value.
-    expect(typeof safariPlatform.supportsOAuth).toBe('boolean');
+  it('keeps OAuth enabled — the tab-based flow shipped and is smoke-verified', () => {
+    // Verified end to end on macOS and iOS (docs/ios-findings.md); flipping
+    // this off again would silently hide the sign-in button.
+    expect(safariPlatform.supportsOAuth).toBe(true);
   });
 
   it('keeps token paste-in available, since its OAuth flow depends on a page we host', () => {
