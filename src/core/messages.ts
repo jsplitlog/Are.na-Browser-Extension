@@ -7,6 +7,7 @@ export type Request =
   | { kind: 'getConnections'; normalizedUrl: string }  // phase 2
   | { kind: 'getAuthState' }
   | { kind: 'signIn'; remember: boolean }
+  | { kind: 'completeOAuth'; callbackUrl: string }
   | { kind: 'signOut' };
 
 /** Anything can post to a service worker, so the router only ever sees vetted shapes. */
@@ -17,6 +18,7 @@ export const isRequest = (value: unknown): value is Request => {
     case 'lookup': return typeof request.url === 'string';
     case 'getConnections': return typeof request.normalizedUrl === 'string';
     case 'signIn': return typeof request.remember === 'boolean';
+    case 'completeOAuth': return typeof request.callbackUrl === 'string';
     case 'getAuthState':
     case 'signOut': return true;
     default: return false;

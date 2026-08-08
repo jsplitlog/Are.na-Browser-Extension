@@ -138,6 +138,8 @@ describe('background message contract', () => {
     expect(isRequest({ kind: 'getConnections', normalizedUrl: 'example.com/a' })).toBe(true);
     expect(isRequest({ kind: 'getAuthState' })).toBe(true);
     expect(isRequest({ kind: 'signIn', remember: false })).toBe(true);
+    expect(isRequest({ kind: 'completeOAuth', callbackUrl: 'https://jsplitlog.github.io/arena-connections/oauth2.html?code=x&state=y' })).toBe(true);
+    expect(isRequest({ kind: 'completeOAuth' })).toBe(false);
     expect(isRequest({ kind: 'signOut' })).toBe(true);
   });
 

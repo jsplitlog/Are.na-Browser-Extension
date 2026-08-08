@@ -208,6 +208,28 @@ describe('safari adapter', () => {
     expect(chromePlatform.offersTokenSignIn).toBe(false);
     expect(firefoxPlatform.offersTokenSignIn).toBe(false);
   });
+
+  it('finds a parked callback tab by redirect-URL prefix, ignoring everything else', async () => {
+    const query = vi.fn().mockResolvedValue([
+      { id: 1, url: 'https://example.com/article' },
+      { id: 2 }, // discarded tab without id/url
+      { id: 3, url: 'https://jsplitlog.github.io/arena-connections/oauth2.html?code=abc&state=xyz' },
+    ]);
+    // Rebuilt by hand rather than spread: spreading chromeStub would invoke its
+    // throwing tripwire getters during object construction.
+    vi.stubGlobal('chrome', {
+      get sidePanel(): never { throw new Error('safari helper touched chrome.sidePanel'); },
+      get identity(): never { throw new Error('safari helper touched chrome.identity'); },
+      tabs: { query },
+    });
+    const { findPendingAuthCallbackTab } = await import('../src/platform/safari');
+    await expect(findPendingAuthCallbackTab()).resolves.toEqual({
+      tabId: 3,
+      callbackUrl: 'https://jsplitlog.github.io/arena-connections/oauth2.html?code=abc&state=xyz',
+    });
+    query.mockResolvedValue([{ id: 1, url: 'https://example.com/' }]);
+    await expect(findPendingAuthCallbackTab()).resolves.toBeNull();
+  });
 });
 
 // The Safari redirect URL, the manifest's host_permissions, and the URI registered

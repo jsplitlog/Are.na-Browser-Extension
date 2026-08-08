@@ -7,12 +7,13 @@ is needed for Simulator work.
 Also re-run 2026-08-08 on **iOS 26.5** (iPhone 17) for the OAuth work below;
 behaviour matched 17.2, so the old runtime was not hiding anything.
 
-**Verdict: the extension works on iOS; OAuth sign-in does not.** The same
-`dist/safari` build that runs in Safari on macOS loads, enables, and renders
-on iOS with no iOS-specific code. OAuth is a genuine lifecycle failure (risk
-area 3) and is **pinned** — token paste-in is the iOS sign-in path. What
-follows is what the spike observed against the four risk areas, plus two UI
-issues worth fixing.
+**Verdict (updated 2026-08-08): the extension works on iOS, and OAuth now has
+a working delivery path.** The same `dist/safari` build that runs in Safari on
+macOS loads, enables, and renders on iOS with no iOS-specific code. The
+original lifecycle failure (risk area 3) was root-caused — iOS never delivers
+`tabs.onUpdated` to the background page — and answered with popup-driven
+completion, probed working on the Simulator. Sole remaining unprobed step:
+the final code exchange against are.na, which needs a real Authorize tap.
 
 ## How to reproduce
 
@@ -135,17 +136,39 @@ does not. It was built and then reverted. Both reasons matter:
    it out of `host_permissions` shrank nothing. For an extension whose whole
    premise is that it only looks something up when you ask, that trade is bad.
 
-**Decision: iOS is pinned.** macOS Safari stays on the `tabs.onUpdated` path,
-which is where it was last known to work. iOS ships as-is — the extension
-installs, enables, and renders correctly there; **OAuth sign-in does not
-complete, and token paste-in is the iOS sign-in path.**
+**~~Decision: iOS is pinned.~~ Unpinned 2026-08-08 — see the next section.**
 
-If iOS OAuth is picked up again, the options are: verify the content-script
-approach on a real device (Simulator automation was not good enough to settle
-it), or drop Safari OAuth entirely and keep token paste-in on both Safari
-platforms, which needs no hosted page, no content script, and no second
-permission. The `beginOAuth`/`completeOAuth` split stays either way — it is a
-correctness fix for how the flow held state, independent of any of this.
+### The popup-driven completion — implemented and probed working (2026-08-08)
+
+Two probes on the 17.2 Simulator settled what the earlier runs left open:
+
+1. **`tabs.onUpdated` is dead on iOS, warm or cold.** A full real-flow probe —
+   popup → tap "Sign in with Are.na" → authorize tab opens (pending record
+   persisted, background freshly active) → navigate that tab to the redirect
+   URL — did not fire the top-level listener, with both per-site permissions
+   confirmed on Allow in Settings. The earlier cold-background probe wasn't
+   the hard case; there is no case where iOS delivers this event to the
+   extension. macOS keeps the listener as its fast path.
+2. **The popup can complete the flow itself, and that works.** New design:
+   on open, the popup runs `findPendingAuthCallbackTab()` (`tabs.query`, which
+   *does* return URLs on permitted hosts — verified), hands the callback URL
+   to the background as a `completeOAuth` runtime message (messaging is the
+   wake path every lookup already rides), surfaces any failure on the sign-in
+   card, and closes the parked tab on success. Probed end-to-end with a parked
+   callback tab: the popup found it, the background revived, `completeOAuth`
+   executed, and its error surfaced on the card. Every link in the chain that
+   iOS could break is confirmed working; the only unprobed step is the final
+   code exchange with are.na, which requires a real Authorize tap (j's
+   account) and is the same macOS-proven, test-covered code path.
+
+UX consequence: on iOS, sign-in is tap Authorize → **reopen the extension** —
+completion happens on reopen (the callback page's copy now says so). On macOS
+the tab still closes by itself via `tabs.onUpdated`, and the popup path is a
+recovery net; the single-use pending record makes the two racing harmless.
+
+The content-script attempt stays reverted — this approach needs no new
+permissions and no content script, and the iOS permission label stays
+"Browsing History" rather than escalating to "Webpage Contents".
 
 Unrelated to OAuth, the original lifecycle assessment still holds for lookups:
 the in-memory maps in `background/service-worker.ts` are dedupe caches and
@@ -181,8 +204,9 @@ owner, which no agent should do:
 
 - [ ] Lookup hit / miss on a real page
 - [ ] Connections expand
-- [x] OAuth sign-in on iOS — **fails**, see risk area 3 above. Retest after
-      any further fix; token paste-in is the working iOS path today.
+- [ ] OAuth sign-in on iOS — the delivery mechanism is probed working (see
+      risk area 3); tap Authorize, reopen the extension, and confirm the
+      signed-in state to close this out.
 - [ ] Token paste-in
 - [ ] Sign-out, and "Remember device" persistence across an app restart
 - [ ] Background-termination behavior mid-lookup (risk area 3)

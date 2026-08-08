@@ -88,3 +88,30 @@ export const resolveActivePageForPopup = async (): Promise<void> => {
   const request: ActivePageRequest = { url: tab.url, requestedAt: Date.now() };
   await chrome.storage.session.set({ [ACTIVE_PAGE_KEY]: request });
 };
+
+/** The popup-driven completion path. iOS Safari never delivers `tabs.onUpdated`
+ *  to the background page — not even a warm one with both host permissions on
+ *  Allow (probed directly; see docs/ios-findings.md) — so the redirect can sit
+ *  in its tab indefinitely with nobody watching. The popup is the one context
+ *  guaranteed alive when the user comes back: on open it looks for a tab
+ *  parked on the callback URL and, if one exists, hands that URL to the
+ *  background over runtime messaging (which does revive the page — it is the
+ *  wake path every lookup already rides). macOS keeps the `tabs.onUpdated`
+ *  fast path above; this doubles as its recovery path, and `completeOAuth`'s
+ *  single-use pending record makes the two racing harmless. */
+export const findPendingAuthCallbackTab = async (): Promise<{ tabId: number; callbackUrl: string } | null> => {
+  const tabs = await chrome.tabs.query({});
+  for (const tab of tabs) {
+    if (tab.id !== undefined && tab.url?.startsWith(SAFARI_OAUTH_REDIRECT_URL)) {
+      return { tabId: tab.id, callbackUrl: tab.url };
+    }
+  }
+  return null;
+};
+
+/** Companion to findPendingAuthCallbackTab: the popup closes the parked tab
+ *  after a successful completion. Lives here, not in sidepanel.ts, because the
+ *  panel's release contract keeps every chrome.tabs touch inside this module. */
+export const closeAuthCallbackTab = async (tabId: number): Promise<void> => {
+  await chrome.tabs.remove(tabId).catch(() => undefined);
+};

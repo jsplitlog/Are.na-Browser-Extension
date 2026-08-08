@@ -58,6 +58,13 @@ const route = async (request: Request): Promise<Response> => {
     case 'signIn':
       await signInWithOAuth(request.remember);
       return { kind: 'ok' };
+    case 'completeOAuth':
+      // Popup-driven completion for Safari: iOS never delivers tabs.onUpdated
+      // to this page (verified in docs/ios-findings.md), so the popup finds
+      // the callback tab on reopen and hands its URL over. The message itself
+      // revives this page — the same wake path every other request rides.
+      await completeOAuth(request.callbackUrl);
+      return { kind: 'ok' };
     case 'signOut':
       await signOut();
       return { kind: 'ok' };
