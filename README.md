@@ -121,10 +121,8 @@ completes the exchange on open. Token paste-in also works as a fallback.
 3. Click **Sign in with Are.na ✶✶**.
 4. Approve the read-only connection on Are.na.
 
-On Safari the card also offers an access token field. Generate one at
-[are.na/settings/personal-access-tokens](https://www.are.na/settings/personal-access-tokens)
-and paste it in. On iOS, after approving on Are.na, reopen the extension —
-sign-in completes on open and the approval tab closes itself.
+On iOS, after approving on Are.na, reopen the extension — sign-in completes
+on open and the approval tab closes itself.
 
 The extension can read the Are.na data available to your account, but cannot
 create, edit, or delete anything. Signing out removes the saved access token

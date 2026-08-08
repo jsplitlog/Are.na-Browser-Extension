@@ -40,10 +40,12 @@ const isAuthCallbackUrl = (url: string | undefined): url is string => {
 
 export const safariPlatform: PlatformAdapter = {
   supportsOAuth: true,
-  // Unlike Chrome and Firefox, Safari's flow depends on a page we host. Token
-  // paste-in stays on the sign-in card as a permanent fallback, so a Pages
-  // outage or a repo rename degrades sign-in rather than breaking it.
-  offersTokenSignIn: true,
+  // OAuth is verified end to end on macOS and iOS, so the token paste-in is
+  // retired from the card (j's call, 2026-08-08). The rendering path and
+  // signInWithToken stay behind this flag: if the hosted redirect page ever
+  // breaks (Pages outage, repo rename), flipping this back restores a
+  // working sign-in without shipping new code.
+  offersTokenSignIn: false,
   openPanel: async () => {
     // No-op: Safari opens the action popup itself; there is nothing to trigger here.
   },

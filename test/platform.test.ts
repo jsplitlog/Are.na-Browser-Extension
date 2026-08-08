@@ -198,11 +198,11 @@ describe('safari adapter', () => {
     expect(safariPlatform.supportsOAuth).toBe(true);
   });
 
-  it('keeps token paste-in available, since its OAuth flow depends on a page we host', () => {
-    // Chrome and Firefox redirect through the browser itself and need no second
-    // path; Safari's redirect is a GitHub Pages URL, so an outage or a repo rename
-    // must degrade sign-in rather than break it.
-    expect(safariPlatform.offersTokenSignIn).toBe(true);
+  it('retires token paste-in everywhere now that Safari OAuth is verified end to end', () => {
+    // The flag and the token form's rendering path stay as the recovery
+    // switch for a hosted-redirect outage — see the comment in
+    // src/platform/safari.ts — but no shipping target renders the form.
+    expect(safariPlatform.offersTokenSignIn).toBe(false);
     expect(chromePlatform.offersTokenSignIn).toBe(false);
     expect(firefoxPlatform.offersTokenSignIn).toBe(false);
   });

@@ -132,9 +132,9 @@ const storeAccessToken = async (token: string, remember: boolean): Promise<Valid
 };
 
 /** Signs in with a manually-pasted Are.na personal access token. This never
- *  depends on the platform adapter, so it works identically on every target;
- *  Safari keeps it beside the OAuth button (`offersTokenSignIn`) because its
- *  OAuth flow depends on a page we host. */
+ *  depends on the platform adapter, so it works identically on every target.
+ *  No target currently renders the form (`offersTokenSignIn` is false
+ *  everywhere) — it's the recovery path if Safari's hosted redirect breaks. */
 export const signInWithToken = async (token: string, remember: boolean): Promise<ValidatedAccount> => {
   const credential = token.trim();
   if (!credential) throw new AuthError('invalid_token', 'Enter an access token.');

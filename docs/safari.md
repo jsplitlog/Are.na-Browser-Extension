@@ -122,12 +122,13 @@ GitHub Pages" below):
 const SAFARI_OAUTH_REDIRECT_URL = 'https://jsplitlog.github.io/arena-connections/oauth2.html';
 ```
 
-Alongside the OAuth button, the sidepanel also renders a token-paste form
-(`.auth-token-form` — see `src/sidepanel/sidepanel.css`) calling the
-`signInWithToken(token, remember)` export from `src/core/auth.ts` (a thin
-wrapper around the token-validation code the OAuth path already used
-internally). Both appear on Safari because `safariPlatform.offersTokenSignIn`
-is `true`; Chrome and Firefox set it `false` and show the OAuth button alone.
+The sidepanel can also render a token-paste form (`.auth-token-form`,
+calling `signInWithToken` from `src/core/auth.ts`), but no target shows it
+anymore: `offersTokenSignIn` is `false` everywhere since OAuth was verified
+end to end on macOS and iOS (2026-08-08). The flag and rendering path are
+kept as the recovery switch — if the hosted redirect page ever breaks,
+flipping `safariPlatform.offersTokenSignIn` back to `true` restores a
+working sign-in without new code.
 The form runs entirely inside the popup page — no message round-trip to the
 background — since `chrome.storage` and `fetch` to `https://api.are.na` are
 both available directly from any extension page and already covered by the
@@ -319,10 +320,9 @@ Also note Are.na ships its *own* Safari extension named "Are.na"; ours is
       no url, e.g. on a Safari internal page).
 - [ ] Navigate to a page known to have Are.na connections, open the popup →
       lookup runs, results render, connections backfill.
-- [ ] Sign out, open popup → both the OAuth button and the token-paste form
-      appear (Safari renders both — `supportsOAuth` and `offersTokenSignIn`
-      are both true), submit an invalid token → inline error, submit a valid
-      token → signs in and re-runs the lookup for the last-viewed page.
+- [ ] Sign out, open popup → the OAuth button appears alone (the token-paste
+      form is retired; `offersTokenSignIn` is false), and signing back in via
+      OAuth re-runs the lookup for the last-viewed page.
 - [ ] "Remember device" checkbox persists across popup close/reopen and
       Safari restart.
 - [ ] Re-open the popup on a different tab → shows that tab's connections,
