@@ -209,11 +209,12 @@ describe('safari adapter', () => {
     expect(firefoxPlatform.offersTokenSignIn).toBe(false);
   });
 
-  it('finds a parked callback tab by redirect-URL prefix, ignoring everything else', async () => {
+  it('finds every parked callback tab by redirect-URL prefix, ignoring everything else', async () => {
     const query = vi.fn().mockResolvedValue([
       { id: 1, url: 'https://example.com/article' },
       { id: 2 }, // discarded tab without id/url
-      { id: 3, url: 'https://jsplitlog.github.io/arena-connections/oauth2.html?code=abc&state=xyz' },
+      { id: 3, url: 'https://jsplitlog.github.io/arena-connections/oauth2.html?code=stale&state=old' },
+      { id: 4, url: 'https://jsplitlog.github.io/arena-connections/oauth2.html?code=abc&state=xyz' },
     ]);
     // Rebuilt by hand rather than spread: spreading chromeStub would invoke its
     // throwing tripwire getters during object construction.
@@ -222,13 +223,13 @@ describe('safari adapter', () => {
       get identity(): never { throw new Error('safari helper touched chrome.identity'); },
       tabs: { query },
     });
-    const { findPendingAuthCallbackTab } = await import('../src/platform/safari');
-    await expect(findPendingAuthCallbackTab()).resolves.toEqual({
-      tabId: 3,
-      callbackUrl: 'https://jsplitlog.github.io/arena-connections/oauth2.html?code=abc&state=xyz',
-    });
+    const { findPendingAuthCallbackTabs } = await import('../src/platform/safari');
+    await expect(findPendingAuthCallbackTabs()).resolves.toEqual([
+      { tabId: 3, callbackUrl: 'https://jsplitlog.github.io/arena-connections/oauth2.html?code=stale&state=old' },
+      { tabId: 4, callbackUrl: 'https://jsplitlog.github.io/arena-connections/oauth2.html?code=abc&state=xyz' },
+    ]);
     query.mockResolvedValue([{ id: 1, url: 'https://example.com/' }]);
-    await expect(findPendingAuthCallbackTab()).resolves.toBeNull();
+    await expect(findPendingAuthCallbackTabs()).resolves.toEqual([]);
   });
 });
 

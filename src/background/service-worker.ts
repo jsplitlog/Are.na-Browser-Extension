@@ -1,4 +1,4 @@
-import { completeOAuth, getAuthState, signInWithOAuth, signOut } from '../core/auth';
+import { completeOAuth, completeOAuthFromCandidates, getAuthState, signInWithOAuth, signOut } from '../core/auth';
 import { ACTIVE_PAGE_KEY, type ActivePageRequest } from '../core/active-page';
 import { createRequestBudget } from '../core/arena';
 import { getCached } from '../core/cache';
@@ -61,9 +61,11 @@ const route = async (request: Request): Promise<Response> => {
     case 'completeOAuth':
       // Popup-driven completion for Safari: iOS never delivers tabs.onUpdated
       // to this page (verified in docs/ios-findings.md), so the popup finds
-      // the callback tab on reopen and hands its URL over. The message itself
-      // revives this page — the same wake path every other request rides.
-      await completeOAuth(request.callbackUrl);
+      // parked callback tabs on reopen and hands their URLs over. The message
+      // itself revives this page — the same wake path every other request
+      // rides. Selection by pending-state match happens in core/auth.ts so a
+      // stale parked tab can't consume the single-use pending record.
+      await completeOAuthFromCandidates(request.callbackUrls);
       return { kind: 'ok' };
     case 'signOut':
       await signOut();

@@ -259,6 +259,31 @@ export const completeOAuth = async (callbackUrl: string): Promise<ValidatedAccou
   return storeAccessToken(accessToken, remember);
 };
 
+/** Popup-driven completion (Safari): pick the one candidate that belongs to
+ *  the pending flow before anything is consumed. `completeOAuth` clears the
+ *  pending record up front — the right call for a single callback, but it
+ *  means a stale parked tab (an abandoned or failed earlier attempt) would
+ *  eat the record and dead-end the real callback, looping every retry. So
+ *  candidates are matched on redirect + state first, and only an actual
+ *  match proceeds to the consuming path. No match returns null with the
+ *  pending record untouched: parked strangers are garbage to sweep, not an
+ *  error, and a flow started elsewhere can still finish. */
+export const completeOAuthFromCandidates = async (callbackUrls: string[]): Promise<ValidatedAccount | null> => {
+  const pending = await readPendingOAuth();
+  if (!pending) return null;
+  const match = callbackUrls.find((url) => {
+    try {
+      const callback = new URL(url);
+      return `${callback.origin}${callback.pathname}` === pending.redirectUri
+        && callback.searchParams.get('state') === pending.state;
+    } catch {
+      return false;
+    }
+  });
+  if (!match) return null;
+  return completeOAuth(match);
+};
+
 /** Runs Authorization Code + PKCE. The client ID must be registered for this
  *  extension's exact redirect.
  *

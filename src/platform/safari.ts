@@ -99,19 +99,20 @@ export const resolveActivePageForPopup = async (): Promise<void> => {
  *  wake path every lookup already rides). macOS keeps the `tabs.onUpdated`
  *  fast path above; this doubles as its recovery path, and `completeOAuth`'s
  *  single-use pending record makes the two racing harmless. */
-export const findPendingAuthCallbackTab = async (): Promise<{ tabId: number; callbackUrl: string } | null> => {
+export const findPendingAuthCallbackTabs = async (): Promise<Array<{ tabId: number; callbackUrl: string }>> => {
   const tabs = await chrome.tabs.query({});
-  for (const tab of tabs) {
-    if (tab.id !== undefined && tab.url?.startsWith(SAFARI_OAUTH_REDIRECT_URL)) {
-      return { tabId: tab.id, callbackUrl: tab.url };
-    }
-  }
-  return null;
+  return tabs.flatMap((tab) =>
+    tab.id !== undefined && tab.url?.startsWith(SAFARI_OAUTH_REDIRECT_URL)
+      ? [{ tabId: tab.id, callbackUrl: tab.url }]
+      : []);
 };
 
-/** Companion to findPendingAuthCallbackTab: the popup closes the parked tab
- *  after a successful completion. Lives here, not in sidepanel.ts, because the
- *  panel's release contract keeps every chrome.tabs touch inside this module. */
-export const closeAuthCallbackTab = async (tabId: number): Promise<void> => {
-  await chrome.tabs.remove(tabId).catch(() => undefined);
+/** Companion to findPendingAuthCallbackTabs: the popup sweeps every parked
+ *  callback tab once a completion attempt has run — the matched tab's code is
+ *  consumed either way, and unmatched ones are dead ends from abandoned
+ *  attempts that would otherwise pile up. Lives here, not in sidepanel.ts,
+ *  because the panel's release contract keeps every chrome.tabs touch inside
+ *  this module. */
+export const closeAuthCallbackTabs = async (tabIds: number[]): Promise<void> => {
+  await Promise.all(tabIds.map((tabId) => chrome.tabs.remove(tabId).catch(() => undefined)));
 };

@@ -241,4 +241,44 @@ describe('resumable OAuth (beginOAuth / completeOAuth)', () => {
     await expect(auth.completeOAuth(`${redirect}?code=c&state=whatever`))
       .rejects.toMatchObject({ kind: 'oauth_state' });
   });
+
+  it('picks the state-matching candidate among stale parked callbacks', async () => {
+    const state = await beginAndReadState(false);
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'picked-token' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { slug: 'me' } }), { status: 200 }));
+
+    // Stale first: an abandoned earlier attempt must not consume the record.
+    const account = await auth.completeOAuthFromCandidates([
+      `${redirect}?code=stale&state=from-an-abandoned-attempt`,
+      'not a url at all',
+      `${redirect}?code=authorization-code&state=${state}`,
+    ]);
+
+    expect(account).not.toBeNull();
+    expect(await auth.getToken()).toBe('picked-token');
+  });
+
+  it('leaves the pending flow intact when no candidate matches', async () => {
+    const state = await beginAndReadState(false);
+
+    await expect(auth.completeOAuthFromCandidates([
+      `${redirect}?code=stale&state=someone-elses`,
+    ])).resolves.toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
+    expect(session.arenaPendingOAuth).toMatchObject({ state });
+
+    // The surviving record still finishes against the real callback.
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'survivor' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { slug: 'me' } }), { status: 200 }));
+    await auth.completeOAuth(`${redirect}?code=real&state=${state}`);
+    expect(await auth.getToken()).toBe('survivor');
+  });
+
+  it('resolves null with no pending flow instead of erroring on parked strangers', async () => {
+    await expect(auth.completeOAuthFromCandidates([
+      `${redirect}?code=c&state=whatever`,
+    ])).resolves.toBeNull();
+  });
 });

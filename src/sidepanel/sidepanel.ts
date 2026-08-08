@@ -11,7 +11,7 @@ import { platform } from '../platform';
 // this module (and its tab-querying implementation) out of the Chrome and
 // Firefox bundles — see the comment on resolveActivePageForPopup in
 // src/platform/safari.ts.
-import { closeAuthCallbackTab, findPendingAuthCallbackTab, resolveActivePageForPopup } from '../platform/safari';
+import { closeAuthCallbackTabs, findPendingAuthCallbackTabs, resolveActivePageForPopup } from '../platform/safari';
 
 // Safari has no sidebar API: this page runs as an action popup there instead
 // of a persistent panel (manifest overlay owns action.default_popup). The
@@ -507,21 +507,20 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   if (change) handleActivePage(change.newValue);
 });
 
-// Safari only: if an OAuth callback tab is parked (iOS never delivers it to
-// the background — docs/ios-findings.md), finish the exchange before the
-// signed-in check below reads auth state, then clean the tab up. A failed
-// completion surfaces on the sign-in card: the user just came back from
-// are.na expecting to be signed in, so a silent return to the sign-in card
-// reads as the extension having ignored them.
+// Safari only: if OAuth callback tabs are parked (iOS never delivers them to
+// the background — docs/ios-findings.md), hand every candidate over and let
+// core/auth.ts pick the one matching the pending flow's state — a stale tab
+// from an abandoned attempt must not consume the single-use pending record.
+// All parked tabs are swept after the attempt: matched or not, none can ever
+// complete again. A failed completion surfaces on the sign-in card: the user
+// just came back from are.na expecting to be signed in, so a silent return
+// to the sign-in card reads as the extension having ignored them.
 const completeParkedOAuth = async (): Promise<string | null> => {
-  const parked = await findPendingAuthCallbackTab();
-  if (!parked) return null;
-  const response = await send({ kind: 'completeOAuth', callbackUrl: parked.callbackUrl });
-  if (response.kind === 'ok') {
-    await closeAuthCallbackTab(parked.tabId);
-    return null;
-  }
-  return response.kind === 'error' ? response.message : 'Could not finish signing in. Try again.';
+  const parked = await findPendingAuthCallbackTabs();
+  if (!parked.length) return null;
+  const response = await send({ kind: 'completeOAuth', callbackUrls: parked.map(({ callbackUrl }) => callbackUrl) });
+  await closeAuthCallbackTabs(parked.map(({ tabId }) => tabId));
+  return response.kind === 'error' ? response.message : null;
 };
 
 const initialize = async (): Promise<void> => {
