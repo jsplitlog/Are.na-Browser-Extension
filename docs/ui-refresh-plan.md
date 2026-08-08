@@ -1,6 +1,6 @@
 # UI Refresh Plan — migrating to are.na's current design tokens
 
-Status: draft — 2026-08-07
+Status: draft — 2026-08-07 (T1 landed 2026-08-08)
 Owner: j
 Companion to: `docs/cross-browser-plan.md` (any restyle lands on all three
 targets at once now)
@@ -185,6 +185,21 @@ Arial fallback @font-face; radius → 3px. No selector changes. Acceptance:
 vitest green (no test asserts colors today — confirm), visual diff of the
 panel in light+dark against `docs/` reference screenshots taken before the
 change.
+
+**Done (2026-08-08).** All light/dark table rows applied to
+`src/styles/arena-theme.css`; `--arena-channel-closed*` now gray (purple
+retired per decision above); every `-active-background` uses the
+`color-mix(in srgb, <token2> 40%, <token1>)` form (including the dark rows,
+where the appendix gave a direct token2 value — the color-mix form was used
+there too for consistency and because it can't be judged visually here);
+radius is `3px`; the `areal fallback` @font-face is added and leads the
+`font-family` stack. `test/sidebar-contract.test.ts` was already asserting
+the old hex/radius values as part of the theme-pinning contract (T1's own
+note above wondering whether any test asserted colors — one does, and it's
+now updated to the new values, not weakened). `npm test` (142/142),
+`npx tsc --noEmit`, and `npm run build` (chrome/firefox/safari) all pass.
+T3 should do the actual visual judgment call on the color-mix percentage
+since nobody could eyeball it while writing T1.
 
 ### T2 — Size/weight applications + auth card against Figma
 

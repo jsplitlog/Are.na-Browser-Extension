@@ -55,12 +55,12 @@ describe('side panel release contract', () => {
     expect(sidepanelHtml).toContain('<meta name="color-scheme" content="light dark">');
     expect(themeStyles).toContain('@media (prefers-color-scheme: dark)');
     expect(themeStyles).toContain('--arena-surface: #000');
-    expect(themeStyles).toContain('--arena-black: #d3d3d3');
-    expect(themeStyles).toContain('--arena-line: #2f2f2f');
-    expect(themeStyles).toContain('--arena-blue: #17b0e2');
-    expect(themeStyles).toContain('--arena-channel-open: #2ba425');
-    expect(themeStyles).toContain('--arena-channel-closed: #d3d3d3');
-    expect(themeStyles).toContain('--arena-channel-private: #e24937');
+    expect(themeStyles).toContain('--arena-black: #e5e5e5');
+    expect(themeStyles).toContain('--arena-line: #333333');
+    expect(themeStyles).toContain('--arena-blue: #5e6dee');
+    expect(themeStyles).toContain('--arena-channel-open: #98dc89');
+    expect(themeStyles).toContain('--arena-channel-closed: #e5e5e5');
+    expect(themeStyles).toContain('--arena-channel-private: #eb6864');
   });
 
   it('shares the Reader design tokens with the sidebar', () => {
@@ -71,7 +71,7 @@ describe('side panel release contract', () => {
     expect(themeStyles).toContain('--arena-row-padding: 14px');
     expect(themeStyles).toContain('--arena-text-title: 0.875rem');
     expect(themeStyles).toContain('--arena-text-ui: 0.75rem');
-    expect(themeStyles).toContain('--arena-radius: 0.25rem');
+    expect(themeStyles).toContain('--arena-radius: 3px');
     expect(themeStyles).toContain('--arena-control-active: #999');
     expect(themeStyles).toContain('--arena-avatar-size: 14px');
     expect(sidepanelStyles).toContain('--panel-gutter: var(--arena-gutter)');
@@ -106,9 +106,9 @@ describe('side panel release contract', () => {
     expect(sidepanelSource).toContain("case 'closed':");
     expect(sidepanelSource).toContain("case 'private':");
     expect(sidepanelSource).toContain("return 'channel-private'");
-    expect(themeStyles).toContain('--arena-channel-open: #17ac10');
-    expect(themeStyles).toContain('--arena-channel-closed: #4b3d67');
-    expect(themeStyles).toContain('--arena-channel-private: #b60202');
+    expect(themeStyles).toContain('--arena-channel-open: #238020');
+    expect(themeStyles).toContain('--arena-channel-closed: #333');
+    expect(themeStyles).toContain('--arena-channel-private: #b93d3d');
     expect(sidepanelStyles).toContain('.block-copy.channel-closed');
     expect(sidepanelStyles).toContain('.block-copy.channel-private');
     expect(sidepanelSource).toContain("'metadata-content'");
