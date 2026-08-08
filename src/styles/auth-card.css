@@ -39,17 +39,20 @@ body.popup-mode .auth-view {
   margin: 0;
 }
 
+/* The auth card follows the Figma Modal (Sign=In / Sign=Out), which the UI
+   refresh plan keeps authoritative for *component* decisions while the live
+   site governs primitive tokens. So these buttons deliberately do NOT take
+   are.na's 12.5px-bold control treatment: Figma specifies 15px regular on a
+   4px radius, and that wins here. Height stays 44px either way — that's the
+   iOS touch minimum, not a type-ramp value. */
 .auth-primary,
 .auth-secondary {
   align-items: center;
   appearance: none;
-  border-radius: var(--arena-radius);
+  border-radius: 4px;
   cursor: pointer;
   display: flex;
-  /* are.na buttons are 12.5px-equivalent and bold (docs/ui-refresh-plan.md
-     T2); height stays a hardcoded 44px regardless — that's the iOS touch
-     minimum, not a type-ramp value. */
-  font: 700 var(--arena-text-label)/var(--arena-leading) Arial, "Helvetica Neue", Helvetica,
+  font: 400 var(--arena-text-ui)/var(--arena-leading) Arial, "Helvetica Neue", Helvetica,
     sans-serif;
   height: 44px;
   justify-content: center;
