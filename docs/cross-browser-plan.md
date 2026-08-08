@@ -157,7 +157,18 @@ Goal: one `npm run build:<target>` per browser, zero `chrome.sidePanel` /
   connections work; sign-in works via token paste; popup layout doesn't
   overflow or double-scroll.
 
-### WS3 — iOS Safari extension (the open workstream) — REVISED 2026-08-07
+### WS3 — iOS Safari extension ✅ spike done 2026-08-08
+
+**Findings: [`docs/ios-findings.md`](ios-findings.md).** The extension builds,
+installs, enables, and renders on the iOS 17.2 Simulator with no iOS-specific
+code. Two UI issues found (sub-44px `.auth-remember` checkbox; vertical
+centering gap in the full-height sheet) and one tradeoff surfaced: routing
+Safari OAuth through GitHub Pages doubled the iOS per-site permission prompt
+surface from one host to two. Signed-in paths remain untested — they need j's
+account. Go/no-go on App Store submission: technically go, practically not
+yet.
+
+The original spike plan follows, for reference.
 
 **Feasibility verdict stands: yes.** And WS2 already did the heavy lifting the
 original spike assumed would be needed: the converter-generated Xcode project
