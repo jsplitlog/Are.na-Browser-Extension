@@ -66,14 +66,59 @@ Two issues found:
   full-height sheet. Cosmetic only. Target-scope any fix to `popup-mode` so
   the sidebar layout is untouched.
 
-### 3. Lifecycle — not exercised
+### 3. Lifecycle — **this is the real problem, and it breaks OAuth**
 
-The plan's concern was iOS aggressively killing the background page
-mid-lookup. Confirming that needs a signed-in session (see *Not tested*
-below), so it remains open. The reasoning behind the original assessment
-still holds: the in-memory maps in `background/service-worker.ts` are dedupe
-caches, and `core/cache.ts` already persists to storage, so the worst case
-should be a retap rather than data loss.
+Confirmed 2026-08-08: **OAuth sign-in does not complete on iOS.** Tapping
+"Sign in with Are.na" opens the auth tab, and the flow then dies silently —
+reopening the popup shows the sign-in card again, with no token and no error.
+
+The mechanism:
+
+1. Opening the auth tab **dismisses the popup sheet**, destroying that page.
+2. With no UI attached, iOS suspends the non-persistent background page.
+3. The original flow registered `tabs.onUpdated` **dynamically** and held the
+   PKCE verifier, `state`, and promise resolvers **in memory**. Suspension
+   took all of it. Nothing was left to catch the redirect.
+
+macOS Safari worked only because its background page happens to stay alive
+for the duration — that was luck of timing, not design.
+
+**What was changed** (commit "Make the OAuth flow survive background
+suspension"): the flow is now split into `beginOAuth` / `completeOAuth` in
+`core/auth.ts`. `beginOAuth` persists `{verifier, state, redirectUri,
+remember}` to `storage.session` and returns the authorize URL;
+`completeOAuth` reads that record back and finishes the exchange, sharing no
+closure with the code that started it. The `tabs.onUpdated` listener is now
+registered at the **top level** of `background/service-worker.ts` via
+`platform.registerAuthCallback`, which is the only shape a browser can use to
+revive a suspended background page. Covered by six tests in
+`test/auth.test.ts` (persistence, `remember` across the gap, state mismatch,
+wrong redirect, replay rejection, no-pending-flow).
+
+**This fixes macOS robustness but is NOT yet confirmed to fix iOS.** A direct
+probe — navigating a tab to the redirect URL with both host permissions
+granted and the rebuilt extension installed — did **not** cause the extension
+to close the tab, meaning the top-level listener did not fire. On this
+evidence iOS does not appear to revive a suspended background page for
+`tabs.onUpdated`.
+
+Caveat on that probe: it tests a *cold* background, the hardest case. In the
+real flow the background is warm when the tab opens, so it may still complete.
+That distinction is untested.
+
+**Likely next step if iOS OAuth is wanted:** register a **content script** on
+the redirect URL that reads `location.href` and `runtime.sendMessage`s it to
+the background. A content script injection wakes the extension where a
+`tabs` event apparently does not, and it removes the need for the
+`jsplitlog.github.io` host permission's `tabs.onUpdated` dependency entirely.
+That is a manifest change plus a small script, not a redesign — the
+`beginOAuth`/`completeOAuth` split above is exactly what such a script would
+call into.
+
+Unrelated to OAuth, the original lifecycle assessment still holds for lookups:
+the in-memory maps in `background/service-worker.ts` are dedupe caches and
+`core/cache.ts` persists to storage, so a mid-lookup termination should cost
+a retap rather than data.
 
 ### 4. Per-site permissions — small, but OAuth doubled it
 
@@ -104,8 +149,8 @@ owner, which no agent should do:
 
 - [ ] Lookup hit / miss on a real page
 - [ ] Connections expand
-- [ ] OAuth sign-in on iOS (the flow is proven on macOS; the open question is
-      whether Safari returns cleanly to the popup afterward)
+- [x] OAuth sign-in on iOS — **fails**, see risk area 3 above. Retest after
+      any further fix; token paste-in is the working iOS path today.
 - [ ] Token paste-in
 - [ ] Sign-out, and "Remember device" persistence across an app restart
 - [ ] Background-termination behavior mid-lookup (risk area 3)

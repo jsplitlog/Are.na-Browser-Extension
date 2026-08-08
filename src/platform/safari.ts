@@ -33,66 +33,6 @@ const requireConfiguredRedirectUrl = (): string => {
   return SAFARI_OAUTH_REDIRECT_URL;
 };
 
-const AUTH_FLOW_TIMEOUT_MS = 5 * 60 * 1000;
-
-type SettleResult = { ok: true; url: string } | { ok: false; error: Error };
-
-/** Opens `authorizeUrl` in a new tab and resolves once that tab navigates to
- *  `redirectUrl` (matched by prefix, since the callback carries a query
- *  string), the user closes the tab, or the flow times out. Always closes the
- *  tab and removes its listeners exactly once, on every path. */
-const launchTabBasedAuthFlow = (authorizeUrl: string, redirectUrl: string): Promise<string | undefined> =>
-  new Promise((resolveFlow, reject) => {
-    let settled = false;
-    let createdTabId: number | undefined;
-
-    const onUpdated = (tabId: number, changeInfo: chrome.tabs.OnUpdatedInfo): void => {
-      if (tabId !== createdTabId || !changeInfo.url) return;
-      if (changeInfo.url.startsWith(redirectUrl)) settle({ ok: true, url: changeInfo.url });
-    };
-
-    // The user closing the auth tab manually is a cancellation, not an error path.
-    const onRemoved = (tabId: number): void => {
-      if (tabId === createdTabId) settle({ ok: false, error: new Error('The sign-in tab was closed.') });
-    };
-
-    const timer = setTimeout(() => {
-      settle({ ok: false, error: new Error('Sign-in timed out.') });
-    }, AUTH_FLOW_TIMEOUT_MS);
-
-    const cleanup = (): void => {
-      chrome.tabs.onUpdated.removeListener(onUpdated);
-      chrome.tabs.onRemoved.removeListener(onRemoved);
-      clearTimeout(timer);
-    };
-
-    const settle = (result: SettleResult): void => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      if (createdTabId !== undefined) void chrome.tabs.remove(createdTabId).catch(() => undefined);
-      if (result.ok) resolveFlow(result.url);
-      else reject(result.error);
-    };
-
-    chrome.tabs.onUpdated.addListener(onUpdated);
-    chrome.tabs.onRemoved.addListener(onRemoved);
-
-    chrome.tabs.create({ url: authorizeUrl, active: true })
-      .then((tab) => {
-        if (settled) {
-          // Already settled (e.g. an instant timeout) before creation resolved.
-          if (tab.id !== undefined) void chrome.tabs.remove(tab.id).catch(() => undefined);
-          return;
-        }
-        createdTabId = tab.id;
-        if (createdTabId === undefined) settle({ ok: false, error: new Error('Could not open the sign-in tab.') });
-      })
-      .catch((error: unknown) => {
-        settle({ ok: false, error: error instanceof Error ? error : new Error('Could not open the sign-in tab.') });
-      });
-  });
-
 export const safariPlatform: PlatformAdapter = {
   supportsOAuth: true,
   // Unlike Chrome and Firefox, Safari's flow depends on a page we host. Token
@@ -103,7 +43,29 @@ export const safariPlatform: PlatformAdapter = {
     // No-op: Safari opens the action popup itself; there is nothing to trigger here.
   },
   getRedirectURL: () => requireConfiguredRedirectUrl(),
-  launchAuthFlow: (url) => launchTabBasedAuthFlow(url, requireConfiguredRedirectUrl()),
+  // Opens the authorize tab and returns — deliberately without waiting for the
+  // callback. Waiting was the original design and it fails on iOS: opening the
+  // tab dismisses the popup sheet, and with no UI attached iOS suspends the
+  // background page, taking any in-memory promise and dynamically-added
+  // listener with it. The callback is picked up by registerAuthCallback below
+  // instead, which survives that suspension.
+  launchAuthFlow: async (url) => {
+    await chrome.tabs.create({ url, active: true });
+    return undefined;
+  },
+  completesAuthInBackground: true,
+  registerAuthCallback: (onCallback) => {
+    const redirectUrl = SAFARI_OAUTH_REDIRECT_URL;
+    if (!redirectUrl) return;
+    // Prefix match: the callback carries ?code=&state= on top of the redirect.
+    // The event's own tabId identifies the auth tab, so nothing has to be
+    // remembered across the suspension to close it afterwards.
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+      if (!changeInfo.url?.startsWith(redirectUrl)) return;
+      onCallback(changeInfo.url);
+      void chrome.tabs.remove(tabId).catch(() => undefined);
+    });
+  },
 };
 
 /** Safari drops `action.onClicked` once a popup is configured (the popup

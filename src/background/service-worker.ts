@@ -1,4 +1,4 @@
-import { getAuthState, signInWithOAuth, signOut } from '../core/auth';
+import { completeOAuth, getAuthState, signInWithOAuth, signOut } from '../core/auth';
 import { ACTIVE_PAGE_KEY, type ActivePageRequest } from '../core/active-page';
 import { createRequestBudget } from '../core/arena';
 import { getCached } from '../core/cache';
@@ -63,6 +63,15 @@ const route = async (request: Request): Promise<Response> => {
       return { kind: 'ok' };
   }
 };
+
+// Registered at the top level, before any await, so the browser can revive a
+// suspended background page to deliver the OAuth callback. On Safari — iOS
+// especially — the page that started the flow is already gone by the time the
+// redirect lands, so this is the only thing left to finish sign-in. No-op on
+// Chrome and Firefox, where chrome.identity resolves the flow in-process.
+platform.registerAuthCallback((callbackUrl) => {
+  void completeOAuth(callbackUrl).catch(() => undefined);
+});
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
   if (!isRequest(message)) {

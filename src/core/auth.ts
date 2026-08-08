@@ -155,8 +155,35 @@ export const isOAuthConfigured = (): boolean => OAUTH_CLIENT_ID.length > 0;
 
 export const getOAuthRedirectUri = (): string => platform.getRedirectURL(OAUTH_REDIRECT_PATH);
 
-/** Runs Authorization Code + PKCE. The client ID must be registered for this extension's exact redirect. */
-export const signInWithOAuth = async (remember: boolean): Promise<ValidatedAccount> => {
+/** Everything `completeOAuth` needs to finish a flow it did not start. Persisted
+ *  rather than closed over, because on targets whose OAuth spans a background
+ *  suspension (Safari, and iOS especially) nothing in memory survives the trip. */
+interface PendingOAuth {
+  verifier: string;
+  state: string;
+  redirectUri: string;
+  remember: boolean;
+}
+
+const PENDING_OAUTH_KEY = 'arenaPendingOAuth';
+
+const isPendingOAuth = (value: unknown): value is PendingOAuth => {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.verifier === 'string'
+    && typeof candidate.state === 'string'
+    && typeof candidate.redirectUri === 'string'
+    && typeof candidate.remember === 'boolean';
+};
+
+const readPendingOAuth = async (): Promise<PendingOAuth | null> => {
+  const stored = await sessionStorage().get(PENDING_OAUTH_KEY);
+  const candidate = stored[PENDING_OAUTH_KEY];
+  return isPendingOAuth(candidate) ? candidate : null;
+};
+
+/** Mints PKCE + state, persists them, and returns the authorize URL to open. */
+export const beginOAuth = async (remember: boolean): Promise<string> => {
   if (!isOAuthConfigured()) {
     throw new AuthError('oauth_unconfigured', 'OAuth sign-in is not configured for this extension yet.');
   }
@@ -172,13 +199,22 @@ export const signInWithOAuth = async (remember: boolean): Promise<ValidatedAccou
     code_challenge: await pkceChallenge(verifier),
     code_challenge_method: 'S256',
   });
-  let callbackUrl: string | undefined;
-  try {
-    callbackUrl = await platform.launchAuthFlow(`https://www.are.na/oauth/authorize?${params.toString()}`);
-  } catch {
-    throw new AuthError('oauth_cancelled', 'OAuth sign-in was cancelled or could not be opened.');
-  }
-  if (!callbackUrl) throw new AuthError('oauth_cancelled', 'OAuth sign-in was cancelled.');
+  await sessionStorage().set({
+    [PENDING_OAUTH_KEY]: { verifier, state, redirectUri, remember } satisfies PendingOAuth,
+  });
+  return `https://www.are.na/oauth/authorize?${params.toString()}`;
+};
+
+/** Validates a callback URL against the persisted pending flow and exchanges the
+ *  code for a token. Safe to call from a top-level listener on a revived
+ *  background page — it reads its state from storage, not from a closure. */
+export const completeOAuth = async (callbackUrl: string): Promise<ValidatedAccount> => {
+  const pending = await readPendingOAuth();
+  if (!pending) throw new AuthError('oauth_state', 'No sign-in was in progress.');
+  // Clear first: a code is single-use, so a retried or duplicated callback must
+  // not be able to replay this record.
+  await sessionStorage().remove([PENDING_OAUTH_KEY]);
+  const { verifier, state, redirectUri, remember } = pending;
   let callback: URL;
   try {
     callback = new URL(callbackUrl);
@@ -221,4 +257,38 @@ export const signInWithOAuth = async (remember: boolean): Promise<ValidatedAccou
   const accessToken = typeof tokenRecord.access_token === 'string' ? tokenRecord.access_token : null;
   if (!accessToken) throw new AuthError('oauth_exchange', 'Are.na returned no access token.');
   return storeAccessToken(accessToken, remember);
+};
+
+/** Runs Authorization Code + PKCE. The client ID must be registered for this
+ *  extension's exact redirect.
+ *
+ *  Two shapes, chosen by the adapter. Where the browser hands the callback back
+ *  in-process (`chrome.identity` on Chrome and Firefox), this awaits the whole
+ *  flow and resolves with the account. Where it does not
+ *  (`completesAuthInBackground` — Safari's tab-based flow), this returns once
+ *  the tab is open: the page that started it is already gone, and a top-level
+ *  listener registered in background/service-worker.ts finishes the exchange. */
+export const signInWithOAuth = async (remember: boolean): Promise<ValidatedAccount | null> => {
+  const authorizeUrl = await beginOAuth(remember);
+  if (platform.completesAuthInBackground) {
+    try {
+      await platform.launchAuthFlow(authorizeUrl);
+    } catch {
+      await sessionStorage().remove([PENDING_OAUTH_KEY]);
+      throw new AuthError('oauth_cancelled', 'OAuth sign-in could not be opened.');
+    }
+    return null;
+  }
+  let callbackUrl: string | undefined;
+  try {
+    callbackUrl = await platform.launchAuthFlow(authorizeUrl);
+  } catch {
+    await sessionStorage().remove([PENDING_OAUTH_KEY]);
+    throw new AuthError('oauth_cancelled', 'OAuth sign-in was cancelled or could not be opened.');
+  }
+  if (!callbackUrl) {
+    await sessionStorage().remove([PENDING_OAUTH_KEY]);
+    throw new AuthError('oauth_cancelled', 'OAuth sign-in was cancelled.');
+  }
+  return completeOAuth(callbackUrl);
 };

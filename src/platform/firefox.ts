@@ -24,4 +24,7 @@ export const firefoxPlatform: PlatformAdapter = {
   openPanel: () => sidebarAction().open(),
   getRedirectURL: (path) => chrome.identity.getRedirectURL(path),
   launchAuthFlow: (url) => chrome.identity.launchWebAuthFlow({ url, interactive: true }),
+  // As on Chrome: identity resolves the callback in-process.
+  completesAuthInBackground: false,
+  registerAuthCallback: () => undefined,
 };
