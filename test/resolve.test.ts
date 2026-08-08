@@ -76,6 +76,34 @@ describe('two-phase resolver integration', () => {
     expect(mocks.searchBlocks).toHaveBeenCalledWith('https://x.com/', expect.anything());
   });
 
+  it('surfaces a persistent rate limit distinctly and never caches it', async () => {
+    mocks.searchBlocks.mockRejectedValueOnce(new mocks.ArenaError('rate_limited'));
+
+    await expect(blocksFor('https://example.com/an-article')).resolves.toMatchObject({
+      status: 'rate_limited',
+      normalizedUrl: 'example.com/an-article',
+    });
+    expect(mocks.putCached).not.toHaveBeenCalled();
+  });
+
+  it('normalizes the URL on the unauthenticated and skipped early returns', async () => {
+    mocks.getToken.mockResolvedValue(null);
+    await expect(blocksFor('https://www.example.com/an-article/')).resolves.toMatchObject({
+      status: 'unauthenticated',
+      normalizedUrl: 'example.com/an-article',
+    });
+
+    mocks.getToken.mockResolvedValue('token');
+    await expect(blocksFor('http://localhost:3000/dev/')).resolves.toMatchObject({
+      status: 'skipped',
+      normalizedUrl: 'localhost/dev',
+    });
+    await expect(blocksFor('not a URL')).resolves.toMatchObject({
+      status: 'skipped',
+      normalizedUrl: 'not a URL',
+    });
+  });
+
   it('fills every missing originating channel in a partial cached result', async () => {
     const blocks = Array.from({ length: 12 }, (_, index) => ({ ...block, id: index + 1 }));
     const original = {

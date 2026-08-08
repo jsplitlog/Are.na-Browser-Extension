@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nextCopySort, sortBlocks, summarizeConnectionCounts, totalConnectionCount } from '../src/core/copy-sort';
+import { nextCopySort, sortBlocks, summarizeConnectionCounts } from '../src/core/copy-sort';
 import type { ArenaBlock, ArenaChannel } from '../src/core/types';
 
 const block = (id: number, createdAt: string | null, connectionCount: number | null): ArenaBlock => ({
@@ -25,13 +25,7 @@ const connections: Record<number, ArenaChannel[]> = { 2: [{}, {}, {}] as ArenaCh
 
 describe('copy sorting', () => {
   it('sums connections only when every block total is known', () => {
-    expect(totalConnectionCount(blocks)).toBeNull();
     expect(summarizeConnectionCounts(blocks)).toEqual({ count: 10, complete: false, known: 3 });
-    expect(totalConnectionCount([
-      block(1, null, 2),
-      block(2, null, 3),
-      block(3, null, 0),
-    ])).toBe(5);
   });
 
   it('activates one axis at a time and reverses the active axis', () => {

@@ -227,6 +227,9 @@ const renderLookupStatus = (result: LookupResult): void => {
     case 'not_premium':
       renderState('Premium required.', 'Are.na search requires Premium.');
       break;
+    case 'rate_limited':
+      renderState('Are.na is rate limiting.', 'Wait a moment and click the toolbar button again.');
+      break;
     case 'skipped':
       renderState('Can’t look up this page.');
       break;

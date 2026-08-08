@@ -9,6 +9,20 @@ export type Request =
   | { kind: 'signIn'; remember: boolean }
   | { kind: 'signOut' };
 
+/** Anything can post to a service worker, so the router only ever sees vetted shapes. */
+export const isRequest = (value: unknown): value is Request => {
+  if (!value || typeof value !== 'object') return false;
+  const request = value as Record<string, unknown>;
+  switch (request.kind) {
+    case 'lookup': return typeof request.url === 'string';
+    case 'getConnections': return typeof request.normalizedUrl === 'string';
+    case 'signIn': return typeof request.remember === 'boolean';
+    case 'getAuthState':
+    case 'signOut': return true;
+    default: return false;
+  }
+};
+
 export type Response =
   | { kind: 'result'; result: LookupResult }
   | {
