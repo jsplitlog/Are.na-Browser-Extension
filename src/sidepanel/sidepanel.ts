@@ -167,7 +167,7 @@ const renderSignIn = (errorMessage = ''): void => {
   } else {
     // This target has no interactive OAuth flow yet (see src/platform/safari.ts) —
     // fall back to pasting a personal access token, generated at
-    // https://dev.are.na/oauth/applications.
+    // https://www.are.na/settings/personal-access-tokens.
     const form = element('form', 'auth-token-form');
     const label = element('label', 'auth-token-label', 'Are.na access token');
     label.htmlFor = 'auth-token-input';

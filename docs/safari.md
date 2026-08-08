@@ -141,10 +141,38 @@ Until j supplies that URI and registers it on the Are.na OAuth application
   round-trip to the background — since `chrome.storage` and `fetch` to
   `https://api.are.na` are both available directly from any extension page
   and already covered by the CSP (`connect-src https://api.are.na`).
-  Generate a personal access token at
-  https://dev.are.na/oauth/applications.
+  Users generate a personal access token at
+  https://www.are.na/settings/personal-access-tokens — this is an
+  Are.na-supported authentication method in its own right, listed alongside
+  OAuth2 in their developer docs, not a workaround.
+  (`https://dev.are.na/oauth/applications` is where OAuth *applications* are
+  created — a different thing, and the wrong link to give an end user.)
 
-**Once j has the redirect URI:**
+## Decision: Safari OAuth is deliberately deferred (2026-08-07)
+
+Safari ships with token paste-in only. This is a considered stop, not an
+unfinished edge:
+
+- Are.na offers **no hosted or out-of-band redirect** — no
+  `urn:ietf:wg:oauth:2.0:oob`, no copy-the-code page — so there is no way to
+  complete a Safari OAuth flow without hosting an https endpoint ourselves.
+- Standing up and maintaining a permanent internet-facing redirect endpoint
+  is a poor trade against what it buys: saving Safari users a single paste of
+  a token they generate once.
+- Personal access tokens are a first-class Are.na auth method, so the Safari
+  sign-in path is legitimate rather than degraded.
+
+On the security question, for the record: the tab-based flow would expose
+only the **authorization code** to the redirect host — never the user's
+password (they authenticate on are.na), never the access token (exchanged
+directly from the extension to `api.are.na`), and never the PKCE verifier.
+A code is single-use, short-lived, and worthless without that verifier, which
+is exactly what PKCE defends. A minimal-exposure host would be an endpoint
+returning an empty 204 with no logging, no scripts, and no external
+resources. That remains available if Safari OAuth is ever wanted; the flow
+below is written and waiting on one constant.
+
+**If that decision is revisited — once there is a redirect URI:**
 1. Set `SAFARI_OAUTH_REDIRECT_URL` in `src/platform/safari.ts`.
 2. Flip `supportsOAuth` to `true` in the same file.
 3. Rebuild — no other code changes needed; `launchAuthFlow` is already fully
