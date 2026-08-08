@@ -151,6 +151,23 @@ page published by GitHub Pages from `site/oauth2.html`:
 https://jsplitlog.github.io/arena-connections/oauth2.html
 ```
 
+**Status: the flow is verified working in Safari (2026-08-07)** — extension
+loaded via **Develop → Add Temporary Extension…** on `dist/safari`, OAuth
+completed, signed in.
+
+It was verified *before* the page was deployed, against a GitHub 404. That is
+not a fluke and is worth understanding: the watcher in
+`src/platform/safari.ts` keys off the tab **navigating** to the redirect URL,
+reading the code from `changeInfo.url`. Whether the server returns a page, a
+404, or nothing is irrelevant to the flow — the extension closes the tab
+before the response matters. So `site/oauth2.html` exists purely so users
+don't watch a 404 flash past mid-sign-in. **A successful sign-in is therefore
+not evidence that the page deployed** — check that separately:
+
+```sh
+curl -sI https://jsplitlog.github.io/arena-connections/oauth2.html | head -1
+```
+
 **Token paste-in stays on the sign-in card alongside the OAuth button** on
 this target (`offersTokenSignIn: true` — Chrome and Firefox set it `false`).
 Safari is the only target whose sign-in depends on something outside the
@@ -259,13 +276,41 @@ this workstream shouldn't take on):
   dependency as macOS OAuth above, plus needs a real device/simulator smoke
   test this environment can't run.
 
-## Manual smoke checklist (do this in Safari — not run here)
+## Manual smoke checklist (do this in Safari)
 
-This environment cannot drive Safari interactively, so none of the below has
-been exercised end-to-end. Before shipping:
+No agent can drive Safari, so these are j's to run. **OAuth sign-in is
+confirmed working (2026-08-07)**; the rest are unrun.
 
-- [ ] Build the extension in Xcode, run the macOS app target, enable the
-      extension in Safari → Settings → Extensions.
+### Loading the extension
+
+The fastest loop is **not** the Xcode app. Safari 18+ loads an unpacked
+extension directly:
+
+**Develop → Add Temporary Extension…** → select the `dist/safari` *folder*
+(not `manifest.json` inside it). Rebuild with `npm run build:safari` and
+re-add to pick up changes.
+
+Two setup traps, both of which present as "the extension isn't in the list at
+all" rather than as an error:
+
+- **Develop → Allow Unsigned Extensions must be on**, and it **resets every
+  time Safari quits**. Unsigned extensions are hidden entirely, not shown
+  disabled. (The Develop menu itself needs Settings → Advanced → *Show
+  features for web developers*.)
+- **Safari won't discover the container app from DerivedData.** If you want
+  the Xcode route — which you'll need eventually for the iOS target — copy
+  `Are.na Connections.app` to `/Applications`, launch it once from there,
+  then restart Safari and re-enable Allow Unsigned Extensions.
+
+Also note Are.na ships its *own* Safari extension named "Are.na"; ours is
+"Are.na Connections". Easy to mistake one for the other in the list.
+
+### Checklist
+
+- [x] OAuth sign-in completes and returns to the popup signed in.
+- [ ] Grant **jsplitlog.github.io** access in Safari → Settings → Extensions
+      → Are.na Connections. Without it `tabs.onUpdated` withholds the
+      callback URL and OAuth times out.
 - [ ] Click the toolbar icon → popup opens at a reasonable size, no
       scrollbar-within-scrollbar, no clipped content.
 - [ ] With no active tab context yet available: popup shows "No page
