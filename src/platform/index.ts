@@ -23,12 +23,16 @@ export interface PlatformAdapter {
    *  When `completesAuthInBackground` is true this resolves as soon as the flow is
    *  open, without a callback URL — see below. */
   launchAuthFlow(url: string): Promise<string | undefined>;
-  /** True when the callback arrives as a navigation rather than as this
+  /** True when the callback arrives as a browser event rather than as this
    *  promise's value. Such a flow must survive the page that started it being
    *  destroyed and the background being suspended, so its state is persisted
-   *  (core/auth.ts) and the callback is delivered by a content script
-   *  (content/oauth-callback.ts) rather than held in memory. */
+   *  (core/auth.ts) and its listener registered by `registerAuthCallback`. */
   readonly completesAuthInBackground: boolean;
+  /** Registers the callback watcher. Must be called at the top level of the
+   *  background entry point — a listener added later cannot revive a suspended
+   *  background page, which is exactly what iOS does mid-flow. No-op on targets
+   *  where the browser resolves the flow in-process. */
+  registerAuthCallback(onCallback: (callbackUrl: string) => void): void;
 }
 
 // A ternary on the literal __TARGET__ (rather than an object keyed by it) lets Rollup's

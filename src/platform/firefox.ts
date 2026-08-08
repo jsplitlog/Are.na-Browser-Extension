@@ -26,4 +26,5 @@ export const firefoxPlatform: PlatformAdapter = {
   launchAuthFlow: (url) => chrome.identity.launchWebAuthFlow({ url, interactive: true }),
   // As on Chrome: identity resolves the callback in-process.
   completesAuthInBackground: false,
+  registerAuthCallback: () => undefined,
 };

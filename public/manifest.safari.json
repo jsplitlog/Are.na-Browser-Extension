@@ -1,10 +1,7 @@
 {
-  "content_scripts": [
-    {
-      "matches": ["https://jsplitlog.github.io/arena-connections/oauth2.html*"],
-      "js": ["content/oauth-callback.js"],
-      "run_at": "document_start"
-    }
+  "host_permissions": [
+    "https://api.are.na/*",
+    "https://jsplitlog.github.io/arena-connections/*"
   ],
   "background": {
     "service_worker": "background/service-worker.js",

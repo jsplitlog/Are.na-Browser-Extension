@@ -4,10 +4,15 @@ Run 2026-08-08 against the converter-generated iOS target in `apple/`,
 iPhone 15 Pro Simulator, **iOS 17.2**. No Apple Developer Program membership
 is needed for Simulator work.
 
-**Verdict: it works, unchanged.** The same `dist/safari` build that runs in
-Safari on macOS loads, enables, and renders on iOS. No iOS-specific code was
-needed. What follows is what the spike actually observed against the four
-risk areas the plan flagged, plus two issues worth fixing.
+Also re-run 2026-08-08 on **iOS 26.5** (iPhone 17) for the OAuth work below;
+behaviour matched 17.2, so the old runtime was not hiding anything.
+
+**Verdict: the extension works on iOS; OAuth sign-in does not.** The same
+`dist/safari` build that runs in Safari on macOS loads, enables, and renders
+on iOS with no iOS-specific code. OAuth is a genuine lifecycle failure (risk
+area 3) and is **pinned** — token paste-in is the iOS sign-in path. What
+follows is what the spike observed against the four risk areas, plus two UI
+issues worth fixing.
 
 ## How to reproduce
 
@@ -106,42 +111,41 @@ Caveat on that probe: it tests a *cold* background, the hardest case. In the
 real flow the background is warm when the tab opens, so it may still complete.
 That distinction is untested.
 
-**The content-script attempt (2026-08-08) — implemented, still unverified,
-and it makes the permission story worse.**
+### The content-script attempt — tried, reverted, pinned (2026-08-08)
 
-`src/content/oauth-callback.ts` is injected on the redirect URL by
-`manifest.safari.json`'s `content_scripts` and messages the callback URL to
-the background, which handles it as an `oauthCallback` request. The theory:
-message delivery revives a suspended background page where a `tabs` event
-does not. `tabs.onUpdated` and `registerAuthCallback` were removed in favour
-of it.
+The obvious next move was a **content script** on the redirect URL that reads
+`location.href` and `runtime.sendMessage`s it to the background, on the theory
+that message delivery revives a suspended background page where a `tabs` event
+does not. It was built and then reverted. Both reasons matter:
 
-Two things to know before building on this:
-
-1. **Not confirmed working.** The same probe (navigating to the redirect URL
-   and watching for the extension to close the tab) did not fire on iOS 26.5
-   either. That could be the fix genuinely failing, or the probe being
-   invalid — a content script needs the per-site permission granted and may
-   need a Safari relaunch after reinstall, neither of which was conclusively
-   established. **Treat iOS OAuth as unverified, not as working.**
-2. **It escalates the iOS permission prompt.** Because content scripts inject
-   into pages, iOS 26 relabels the extension's permission from
-   *"Browsing History — can see your browsing history on the current tab's
-   webpage"* to:
+1. **It did not demonstrably work.** The same probe on **iOS 26.5** (a current
+   runtime, not just 17.2) still did not fire. Inconclusive rather than
+   disproven — a content script needs its per-site permission granted and may
+   need a Safari relaunch after reinstall, and neither was established
+   reliably through Simulator automation. But unverified is unverified.
+2. **It made the permission story worse, not better.** Because content scripts
+   inject into pages, iOS 26 relabels the extension from *"Browsing History —
+   can see your browsing history on the current tab's webpage"* to:
 
    > **Webpage Contents and Browsing History** — Can read and alter sensitive
    > information on webpages, including passwords, phone numbers, and credit
    > cards…
 
-   `jsplitlog.github.io` also still appears as a per-site entry, so dropping
-   it from `host_permissions` did **not** shrink the surface. For an extension
-   whose whole pitch is that it only looks things up when you ask, that is a
-   meaningful cost — arguably worse than the problem it solves.
+   `jsplitlog.github.io` also *still* appeared as a per-site entry, so moving
+   it out of `host_permissions` shrank nothing. For an extension whose whole
+   premise is that it only looks something up when you ask, that trade is bad.
 
-Given both, the honest options are unchanged from the earlier decision point:
-verify this properly on a real device, or drop Safari OAuth entirely and keep
-token paste-in, which works on both Safari platforms today and needs no
-hosted page, no content script, and no second permission.
+**Decision: iOS is pinned.** macOS Safari stays on the `tabs.onUpdated` path,
+which is where it was last known to work. iOS ships as-is — the extension
+installs, enables, and renders correctly there; **OAuth sign-in does not
+complete, and token paste-in is the iOS sign-in path.**
+
+If iOS OAuth is picked up again, the options are: verify the content-script
+approach on a real device (Simulator automation was not good enough to settle
+it), or drop Safari OAuth entirely and keep token paste-in on both Safari
+platforms, which needs no hosted page, no content script, and no second
+permission. The `beginOAuth`/`completeOAuth` split stays either way — it is a
+correctness fix for how the flow held state, independent of any of this.
 
 Unrelated to OAuth, the original lifecycle assessment still holds for lookups:
 the in-memory maps in `background/service-worker.ts` are dedupe caches and

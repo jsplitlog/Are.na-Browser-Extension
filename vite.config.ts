@@ -51,17 +51,12 @@ export default defineConfig({
         // than a service worker (see manifest.firefox.json); keep this source
         // worker-safe (no `window`, no DOM) so one output serves both shapes.
         'service-worker': resolve(import.meta.dirname, 'src/background/service-worker.ts'),
-        // Safari-only (manifest.safari.json content_scripts); harmless dead weight
-        // in the other builds, which never reference it.
-        'oauth-callback': resolve(import.meta.dirname, 'src/content/oauth-callback.ts'),
       },
       output: {
-        // Both of these are named by a manifest, so they need stable paths
-        // rather than hashed asset names.
         entryFileNames: (chunk) =>
-          chunk.name === 'service-worker' ? 'background/service-worker.js'
-          : chunk.name === 'oauth-callback' ? 'content/oauth-callback.js'
-          : 'assets/[name]-[hash].js',
+          chunk.name === 'service-worker'
+            ? 'background/service-worker.js'
+            : 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
       },

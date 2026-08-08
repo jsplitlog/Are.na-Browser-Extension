@@ -53,11 +53,19 @@ export const safariPlatform: PlatformAdapter = {
     await chrome.tabs.create({ url, active: true });
     return undefined;
   },
-  // The callback comes back through content/oauth-callback.ts, injected into the
-  // redirect page by manifest.safari.json's content_scripts, which messages the
-  // background. tabs.onUpdated was tried first and does not reliably revive a
-  // suspended background page on iOS; message delivery does.
   completesAuthInBackground: true,
+  registerAuthCallback: (onCallback) => {
+    const redirectUrl = SAFARI_OAUTH_REDIRECT_URL;
+    if (!redirectUrl) return;
+    // Prefix match: the callback carries ?code=&state= on top of the redirect.
+    // The event's own tabId identifies the auth tab, so nothing has to be
+    // remembered across the suspension to close it afterwards.
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+      if (!changeInfo.url?.startsWith(redirectUrl)) return;
+      onCallback(changeInfo.url);
+      void chrome.tabs.remove(tabId).catch(() => undefined);
+    });
+  },
 };
 
 /** Safari drops `action.onClicked` once a popup is configured (the popup
