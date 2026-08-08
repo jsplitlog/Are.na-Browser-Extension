@@ -52,7 +52,11 @@ body.popup-mode .auth-view {
   border-radius: 4px;
   cursor: pointer;
   display: flex;
-  font: 400 var(--arena-text-ui)/var(--arena-leading) Arial, "Helvetica Neue", Helvetica,
+  /* Hardcoded like the card's other Figma-spec sizes: --arena-text-ui is
+     0.75rem, which is 15px only at the 20px root — every real host viewport
+     is under the 640px query that drops the root to 18px, so the token
+     actually rendered 13.5px. */
+  font: 400 15px/var(--arena-leading) Arial, "Helvetica Neue", Helvetica,
     sans-serif;
   height: 44px;
   justify-content: center;
@@ -113,7 +117,7 @@ body.popup-mode .auth-view {
    input on click anywhere inside it) to a 44px touch target (WS3 iOS spike,
    docs/ios-findings.md). */
 .auth-remember { cursor: pointer; min-height: 44px; user-select: none; }
-.auth-link { font-size: var(--arena-text-ui); }
+.auth-link { font-size: 15px; }
 .auth-link:hover { color: var(--arena-black); }
 
 .auth-icon {
