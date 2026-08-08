@@ -28,8 +28,11 @@
      stronger step 2 tint rather than applying it at full strength. */
   --arena-channel-open-active-background: color-mix(in srgb, #b4d6b3 40%, #f4f8f3);
   --arena-channel-closed: #333;
-  --arena-channel-closed-background: #f7f7f7;
-  --arena-channel-closed-active-background: color-mix(in srgb, #dedede 40%, #f7f7f7);
+  /* Closed rows rest on the plain surface; the gray1 tint that used to be
+     their resting state is the hover/active feedback instead (j's call after
+     the T3 browser check — the tinted resting rows read too dark). */
+  --arena-channel-closed-background: transparent;
+  --arena-channel-closed-active-background: #f7f7f7;
   --arena-channel-private: #b93d3d;
   --arena-channel-private-background: #faf4f3;
   --arena-channel-private-active-background: color-mix(in srgb, #dfbebe 40%, #faf4f3);
@@ -79,8 +82,8 @@
     --arena-channel-open-background: #121d12;
     --arena-channel-open-active-background: color-mix(in srgb, #2a4c29 40%, #121d12);
     --arena-channel-closed: #e5e5e5;
-    --arena-channel-closed-background: #1a1a1a;
-    --arena-channel-closed-active-background: color-mix(in srgb, #4f4f4f 40%, #1a1a1a);
+    --arena-channel-closed-background: transparent;
+    --arena-channel-closed-active-background: #1a1a1a;
     --arena-channel-private: #eb6864;
     --arena-channel-private-background: #1a0404;
     --arena-channel-private-active-background: color-mix(in srgb, #412020 40%, #1a0404);
