@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "npm run build:chrome && npm run build:firefox && npm run build:safari",
-    "build:chrome": "tsc --noEmit && TARGET=chrome vite build && node scripts/build-manifest.mjs chrome",
-    "build:firefox": "tsc --noEmit && TARGET=firefox vite build && node scripts/build-manifest.mjs firefox",
-    "build:safari": "tsc --noEmit && TARGET=safari vite build && node scripts/build-manifest.mjs safari",
+    "build:chrome": "tsc --noEmit && TARGET=chrome vite build",
+    "build:firefox": "tsc --noEmit && TARGET=firefox vite build",
+    "build:safari": "tsc --noEmit && TARGET=safari vite build",
     "dev": "TARGET=chrome vite build --watch",
     "lint:firefox": "web-ext lint --source-dir dist/firefox",
     "sign:firefox": "npm run build:firefox && web-ext sign --source-dir dist/firefox --artifacts-dir dist --channel unlisted",

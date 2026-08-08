@@ -43,7 +43,11 @@ export const buildManifestFor = (target) => {
   }
   const base = readManifestJson('public/manifest.base.json');
   const overlay = readManifestJson(`public/manifest.${target}.json`);
-  return mergeManifest(base, overlay);
+  // package.json is the single source of truth for the version: hand-bumping
+  // it in two files desyncs the zip filename (scripts/package.mjs reads
+  // package.json) from the manifest the stores actually read.
+  const { version } = readManifestJson('package.json');
+  return { ...mergeManifest(base, overlay), version };
 };
 
 export const writeMergedManifest = (target, outDir) => {

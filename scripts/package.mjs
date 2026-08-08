@@ -83,7 +83,8 @@ const packageTarget = (target) => {
     const zipPath = resolve(root, 'dist', zipName);
     rmSync(zipPath, { force: true });
     // -X: drop extra file attributes/timestamps for a more reproducible archive; -r: recurse.
-    execFileSync('zip', ['-r', '-X', zipPath, '.'], { cwd: staging, stdio: 'inherit' });
+    // -x: keep Finder droppings (.DS_Store etc.) out of store uploads.
+    execFileSync('zip', ['-r', '-X', zipPath, '.', '-x', '.*', '*/.*'], { cwd: staging, stdio: 'inherit' });
     console.log(`Wrote dist/${zipName}`);
     return zipPath;
   } finally {
