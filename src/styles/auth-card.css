@@ -3,7 +3,14 @@
   display: flex;
   justify-content: center;
   min-height: 100vh;
-  padding: 16px;
+  padding: var(--arena-space-4);
+}
+
+/* Safari's popup renders as an iOS sheet; at the full-height detent,
+   centering leaves a large empty gap above the card. Top-align there and
+   leave the Chrome/Firefox sidebar (no .popup-mode) centered as before. */
+body.popup-mode .auth-view {
+  align-items: flex-start;
 }
 
 .auth-card {
@@ -22,23 +29,35 @@
 
 .auth-title {
   color: var(--arena-black);
-  font: 700 18px/1.3 Arial, "Helvetica Neue", Helvetica, sans-serif;
+  font: 700 18px/var(--arena-leading) Arial, "Helvetica Neue", Helvetica, sans-serif;
   margin: 0;
 }
 
 .auth-description {
   color: var(--arena-text);
-  font: 400 16px/1.3 Arial, "Helvetica Neue", Helvetica, sans-serif;
+  font: 400 16px/var(--arena-leading) Arial, "Helvetica Neue", Helvetica, sans-serif;
   margin: 0;
 }
 
-.auth-primary {
+/* The auth card follows the Figma Modal (Sign=In / Sign=Out), which the UI
+   refresh plan keeps authoritative for *component* decisions while the live
+   site governs primitive tokens. So these buttons deliberately do NOT take
+   are.na's 12.5px-bold control treatment: Figma specifies 15px regular on a
+   4px radius, and that wins here. Height stays 44px either way — that's the
+   iOS touch minimum, not a type-ramp value. */
+.auth-primary,
+.auth-secondary {
   align-items: center;
   appearance: none;
   border-radius: 4px;
   cursor: pointer;
   display: flex;
-  font: 400 15px/1.3 Arial, "Helvetica Neue", Helvetica, sans-serif;
+  /* Hardcoded like the card's other Figma-spec sizes: --arena-text-ui is
+     0.75rem, which is 15px only at the 20px root — every real host viewport
+     is under the 640px query that drops the root to 18px, so the token
+     actually rendered 13.5px. */
+  font: 400 15px/var(--arena-leading) Arial, "Helvetica Neue", Helvetica,
+    sans-serif;
   height: 44px;
   justify-content: center;
   padding: 6px 11px;
@@ -52,13 +71,23 @@
   color: var(--arena-surface);
 }
 
-.auth-primary:hover:not(:disabled) { opacity: 0.9; }
-.auth-primary:disabled { cursor: wait; opacity: 0.55; }
+/* Token paste-in sits beside the OAuth button on targets that offer both
+   (Safari), so it reads as the quieter of the two. */
+.auth-secondary {
+  background: transparent;
+  border: 1px solid var(--arena-control-border);
+  color: var(--arena-black);
+}
+
+.auth-primary:hover:not(:disabled),
+.auth-secondary:hover:not(:disabled) { opacity: 0.9; }
+.auth-primary:disabled,
+.auth-secondary:disabled { cursor: wait; opacity: 0.55; }
 
 .auth-message {
   color: var(--arena-text);
-  font: 400 14px/1.3 Arial, "Helvetica Neue", Helvetica, sans-serif;
-  margin: -8px 0 0;
+  font: 400 14px/var(--arena-leading) Arial, "Helvetica Neue", Helvetica, sans-serif;
+  margin: calc(-1 * var(--arena-space-2)) 0 0;
 }
 
 .auth-message:empty { display: none; }
@@ -76,14 +105,18 @@
   align-items: center;
   color: var(--arena-muted);
   display: inline-flex;
-  font: 400 14px/1.3 Arial, "Helvetica Neue", Helvetica, sans-serif;
-  gap: 4px;
+  font: 400 14px/var(--arena-leading) Arial, "Helvetica Neue", Helvetica, sans-serif;
+  gap: var(--arena-space-1);
   margin: 0;
   text-decoration: none;
   white-space: nowrap;
 }
 
-.auth-remember { cursor: pointer; user-select: none; }
+/* The visible checkbox stays a normal 16px so it doesn't look oversized in
+   the panel; min-height instead grows the <label> itself (which toggles the
+   input on click anywhere inside it) to a 44px touch target (WS3 iOS spike,
+   docs/ios-findings.md). */
+.auth-remember { cursor: pointer; min-height: 44px; user-select: none; }
 .auth-link { font-size: 15px; }
 .auth-link:hover { color: var(--arena-black); }
 
@@ -97,7 +130,7 @@
   appearance: none;
   background: var(--arena-input);
   border: 1px solid var(--arena-line);
-  border-radius: 3px;
+  border-radius: var(--arena-radius);
   cursor: pointer;
   display: grid;
   height: 16px;

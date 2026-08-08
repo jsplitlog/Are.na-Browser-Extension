@@ -23,6 +23,36 @@ body {
   background: var(--arena-surface);
   line-height: var(--arena-leading);
   min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Safari has no sidebar API — this page runs as an action popup there (see
+ * src/sidepanel/sidepanel.ts, which adds this class only when __TARGET__ ===
+ * 'safari'). On macOS the popover sizes itself from the page, so it needs an
+ * explicit box; Chrome and Firefox never get this class and keep the
+ * resizable sidebar layout above completely unscoped. */
+body.popup-mode {
+  max-height: 600px;
+  min-height: 0;
+  overflow-y: auto;
+  width: 380px;
+}
+
+/* iOS presents the same popup as a sheet whose webview already spans the
+ * device viewport, so the macOS popover box must not apply: capping at 600px
+ * strands dead space below the list at the full-height detent, and the fixed
+ * 380px width leaves a gutter on the right. Touch is the discriminator —
+ * macOS popovers are pointer-driven, the sheet is not. dvh tracks the
+ * sheet's detent as it expands (iOS floor is 16.4, which supports it). */
+@media (hover: none) and (pointer: coarse) {
+  body.popup-mode {
+    height: 100dvh;
+    max-height: none;
+    width: 100%;
+  }
 }
 
 @media (max-width: 640px) {
@@ -39,16 +69,10 @@ button { font: inherit; }
   background: transparent;
   border: 0;
   border-radius: var(--arena-radius);
-  color: var(--arena-text);
-  cursor: pointer;
-  font-size: var(--arena-text-body);
-  line-height: 1;
-  padding: var(--arena-space-2);
-}
-
-.log-out-button {
   color: var(--arena-muted);
+  cursor: pointer;
   font-size: var(--arena-text-small);
+  line-height: 1;
   padding: var(--arena-space-1);
 }
 
@@ -77,22 +101,6 @@ button { font: inherit; }
   line-height: var(--arena-leading);
   margin: var(--arena-space-1) 0 0;
 }
-
-.primary-button {
-  appearance: none;
-  background: var(--arena-surface);
-  border: 1px solid var(--arena-control-border);
-  border-radius: var(--arena-radius);
-  color: var(--arena-text);
-  cursor: pointer;
-  font-size: var(--arena-text-ui);
-  font-weight: 700;
-  line-height: var(--arena-leading);
-  margin-top: var(--arena-space-4);
-  padding: var(--arena-space-2) var(--arena-space-3);
-}
-
-.primary-button:hover { border-color: var(--arena-control-active); color: var(--arena-black); }
 
 .result-context {
   padding: var(--arena-space-4) var(--panel-gutter);
@@ -151,7 +159,8 @@ button { font: inherit; }
   color: var(--arena-text);
   cursor: pointer;
   display: inline-flex;
-  font-size: var(--arena-text-ui);
+  font-size: var(--arena-text-label);
+  font-weight: 700;
   gap: var(--arena-space-2);
   justify-content: center;
   line-height: var(--arena-leading);
@@ -285,6 +294,37 @@ button { font: inherit; }
   font-size: var(--arena-text-micro);
   font-weight: 700;
   justify-content: center;
+}
+
+.auth-token-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--arena-space-2);
+}
+
+.auth-token-label {
+  color: var(--arena-muted);
+  font-size: var(--arena-text-ui);
+}
+
+.auth-token-input {
+  appearance: none;
+  background: var(--arena-input);
+  border: 1px solid var(--arena-control-border);
+  border-radius: var(--arena-radius);
+  color: var(--arena-black);
+  /* 16px minimum keeps iOS Safari from zooming the page on focus (WS3). */
+  font-size: 16px;
+  /* 44px minimum touch target, ahead of the iOS Safari pass (WS3). */
+  min-height: 44px;
+  padding: var(--arena-space-2) var(--arena-space-3);
+  width: 100%;
+}
+
+.auth-token-input:focus-visible {
+  border-color: var(--arena-control-active);
+  outline: 1px solid var(--arena-blue);
+  outline-offset: 1px;
 }
 
 button:focus-visible,

@@ -21,16 +21,34 @@ beforeEach(() => {
 });
 
 describe('arena API', () => {
-  it('uses two token queries and retains only exact normalized URL matches', async () => {
+  it('runs each token query in both scopes and retains only exact normalized URL matches', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(json({ data: [{ id: 1, title: 'yes', class: 'Link', created_at: '2026-08-05T12:00:00Z', source: { url: 'https://example.com/a/' }, user: { name: 'Creator', slug: 'creator', avatar: 'https://static.avatars.are.na/creator.jpg' } }, { id: 2, source: { url: 'https://other.test/a' } }] }))
-      .mockResolvedValueOnce(json({ data: [{ id: 1, source: { url: 'https://example.com/a/' } }, { id: 3, class: 'Embed', source: { url: 'https://example.com/a' } }] }));
+      .mockResolvedValueOnce(json({ data: [{ id: 7, class: 'Link', source: { url: 'https://example.com/a' } }] }))
+      .mockResolvedValueOnce(json({ data: [{ id: 1, source: { url: 'https://example.com/a/' } }, { id: 3, class: 'Embed', source: { url: 'https://example.com/a' } }] }))
+      .mockResolvedValueOnce(json({ data: [] }));
     vi.stubGlobal('fetch', fetchMock);
     const blocks = await searchBlocks('https://www.example.com/a/');
-    expect(blocks.map((block) => block.id)).toEqual([1, 3]);
+    expect(blocks.map((block) => block.id)).toEqual([1, 7, 3]);
     expect(blocks[0]).toMatchObject({ userName: 'Creator', userSlug: 'creator', userAvatarUrl: 'https://static.avatars.are.na/creator.jpg', createdAt: '2026-08-05T12:00:00Z' });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain('type=Link%2CEmbed%2CImage');
+    // Order is q1 public, q1 scope=my, q2 public, q2 scope=my.
+    expect(String(fetchMock.mock.calls[0]?.[0])).not.toContain('scope=my');
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain('scope=my');
+    expect(String(fetchMock.mock.calls[2]?.[0])).not.toContain('scope=my');
+    expect(String(fetchMock.mock.calls[3]?.[0])).toContain('scope=my');
+  });
+
+  it('keeps the public results when the scope=my pass fails', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(json({ data: [{ id: 1, source: { url: 'https://example.com/a' } }] }))
+      .mockRejectedValue(new TypeError('network down'));
+    vi.stubGlobal('fetch', fetchMock);
+    buildQueries.mockReturnValueOnce(['specific query']);
+    await expect(searchBlocks('https://example.com/a')).resolves.toEqual([
+      expect.objectContaining({ id: 1 }),
+    ]);
   });
 
   it('ignores malformed source URLs without discarding valid matches', async () => {
@@ -64,12 +82,26 @@ describe('arena API', () => {
   });
 
   it('retries 5xx once and respects a request budget', async () => {
-    const fetchMock = vi.fn().mockResolvedValueOnce(json({}, 500)).mockResolvedValueOnce(json({ data: [] }));
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(json({}, 500))
+      .mockResolvedValueOnce(json({ data: [{ id: 1, source: { url: 'https://example.com/a' } }] }));
     vi.stubGlobal('fetch', fetchMock);
     buildQueries.mockReturnValueOnce(['specific query']);
-    await searchBlocks('https://example.com/a', createRequestBudget(2));
+    // Budget 2 is consumed by the retried public pass; the scope=my pass is
+    // budget-blocked before fetching, which is fine because results exist.
+    await expect(searchBlocks('https://example.com/a', createRequestBudget(2)))
+      .resolves.toEqual([expect.objectContaining({ id: 1 })]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     await expect(searchBlocks('https://example.com/a', createRequestBudget(0))).rejects.toMatchObject({ kind: 'network' } satisfies Partial<ArenaError>);
+  });
+
+  it('propagates a scope=my failure when the public pass found nothing, so no false miss is cached', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(json({ data: [] }))
+      .mockResolvedValue(json({}, 429));
+    vi.stubGlobal('fetch', fetchMock);
+    buildQueries.mockReturnValueOnce(['specific query']);
+    await expect(searchBlocks('https://example.com/a')).rejects.toMatchObject({ kind: 'rate_limited' });
   });
 
   it.each([403, 408, 429])('retries and surfaces HTTP %s as an error, never a miss', async (status) => {

@@ -165,3 +165,135 @@ describe('auth', () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 });
+
+// Safari's tab-based flow spans a background suspension: on iOS the page that
+// started sign-in is destroyed when the auth tab opens, so completeOAuth runs
+// later, on a revived background page, with nothing in memory. These exercise
+// that split directly — begin and complete never share a closure.
+describe('resumable OAuth (beginOAuth / completeOAuth)', () => {
+  const redirect = 'https://unit-test.chromiumapp.org/oauth2';
+
+  const beginAndReadState = async (remember: boolean): Promise<string> => {
+    const authorizeUrl = await auth.beginOAuth(remember);
+    const state = new URL(authorizeUrl).searchParams.get('state');
+    expect(state).toBeTruthy();
+    return state as string;
+  };
+
+  it('persists the pending flow so a later call can finish it', async () => {
+    const state = await beginAndReadState(false);
+
+    // Everything completeOAuth needs is in storage, not in a promise.
+    expect(session.arenaPendingOAuth).toMatchObject({ state, remember: false });
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'resumed-token' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { slug: 'me' } }), { status: 200 }));
+
+    await auth.completeOAuth(`${redirect}?code=authorization-code&state=${state}`);
+
+    expect(await auth.getToken()).toBe('resumed-token');
+  });
+
+  it('honours remember across the suspension, storing to local rather than session', async () => {
+    const state = await beginAndReadState(true);
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'remembered-token' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { slug: 'me' } }), { status: 200 }));
+
+    await auth.completeOAuth(`${redirect}?code=authorization-code&state=${state}`);
+
+    expect(local.arenaAuthToken).toBe('remembered-token');
+  });
+
+  it('rejects a callback whose state does not match the persisted flow', async () => {
+    await beginAndReadState(false);
+
+    await expect(auth.completeOAuth(`${redirect}?code=c&state=forged`))
+      .rejects.toMatchObject({ kind: 'oauth_state' });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('rejects a callback to an unexpected redirect', async () => {
+    const state = await beginAndReadState(false);
+
+    await expect(auth.completeOAuth(`https://attacker.example/oauth2?code=c&state=${state}`))
+      .rejects.toMatchObject({ kind: 'oauth_state' });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('clears the pending flow so a replayed callback cannot reuse it', async () => {
+    const state = await beginAndReadState(false);
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'once-only' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { slug: 'me' } }), { status: 200 }));
+
+    await auth.completeOAuth(`${redirect}?code=authorization-code&state=${state}`);
+    expect(session.arenaPendingOAuth).toBeUndefined();
+
+    // A single-use code arriving twice must not start a second exchange.
+    await expect(auth.completeOAuth(`${redirect}?code=authorization-code&state=${state}`))
+      .rejects.toMatchObject({ kind: 'oauth_state' });
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects when no flow is pending at all', async () => {
+    await expect(auth.completeOAuth(`${redirect}?code=c&state=whatever`))
+      .rejects.toMatchObject({ kind: 'oauth_state' });
+  });
+
+  it('picks the state-matching candidate among stale parked callbacks', async () => {
+    const state = await beginAndReadState(false);
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'picked-token' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { slug: 'me' } }), { status: 200 }));
+
+    // Stale first: an abandoned earlier attempt must not consume the record.
+    const account = await auth.completeOAuthFromCandidates([
+      `${redirect}?code=stale&state=from-an-abandoned-attempt`,
+      'not a url at all',
+      `${redirect}?code=authorization-code&state=${state}`,
+    ]);
+
+    expect(account).not.toBeNull();
+    expect(await auth.getToken()).toBe('picked-token');
+  });
+
+  it('leaves the pending flow intact when no candidate matches', async () => {
+    const state = await beginAndReadState(false);
+
+    await expect(auth.completeOAuthFromCandidates([
+      `${redirect}?code=stale&state=someone-elses`,
+    ])).resolves.toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
+    expect(session.arenaPendingOAuth).toMatchObject({ state });
+
+    // The surviving record still finishes against the real callback.
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'survivor' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { slug: 'me' } }), { status: 200 }));
+    await auth.completeOAuth(`${redirect}?code=real&state=${state}`);
+    expect(await auth.getToken()).toBe('survivor');
+  });
+
+  it('reports an expired flow when callbacks are parked but nothing is pending', async () => {
+    // The user came back from are.na with a callback tab open, but the pending
+    // record is gone (expired storage, completed elsewhere): silence here reads
+    // as the extension ignoring them, so it must surface as an error.
+    await expect(auth.completeOAuthFromCandidates([
+      `${redirect}?code=c&state=whatever`,
+    ])).rejects.toMatchObject({ kind: 'oauth_state' });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('clears an abandoned pending flow when a token sign-in supersedes it', async () => {
+    await beginAndReadState(false);
+    expect(session.arenaPendingOAuth).toBeDefined();
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { slug: 'me' } }), { status: 200 }));
+
+    await auth.signInWithToken('pasted-token', false);
+
+    expect(session.arenaPendingOAuth).toBeUndefined();
+  });
+});

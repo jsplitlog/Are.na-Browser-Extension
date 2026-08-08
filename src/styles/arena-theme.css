@@ -1,26 +1,43 @@
+/* Metric-tuned local-Arial fallback for are.na's "areal" webfont — we don't
+   bundle areal itself, so this stand-in matches its line metrics (0 bytes
+   shipped, see docs/ui-refresh-plan.md "Font"). */
+@font-face {
+  font-family: "areal fallback";
+  src: local("Arial");
+  ascent-override: 87.13%;
+  descent-override: 20.84%;
+  line-gap-override: 0%;
+  size-adjust: 100.76%;
+}
+
 :root {
   color-scheme: light dark;
   --arena-black: #333;
-  --arena-text: #585858;
+  --arena-text: #696969;
   --arena-muted: #999;
-  --arena-line: #eee;
+  --arena-line: #ededed;
   --arena-soft: #f7f7f7;
   --arena-surface: #fff;
-  --arena-input: rgb(247, 245, 244);
-  --arena-control-border: #ccc;
+  --arena-input: #f7f7f7;
+  --arena-control-border: #dedede;
   --arena-control-active: #999;
-  --arena-blue: #00bbf7;
-  --arena-channel-open: #17ac10;
-  --arena-channel-open-background: rgb(23 172 16 / 2.5%);
-  --arena-channel-open-active-background: rgb(23 172 16 / 7%);
-  --arena-channel-closed: #4b3d67;
-  --arena-channel-closed-background: rgb(75 61 103 / 2.5%);
-  --arena-channel-closed-active-background: rgb(75 61 103 / 7%);
-  --arena-channel-private: #b60202;
-  --arena-channel-private-background: rgb(182 2 2 / 2.5%);
-  --arena-channel-private-active-background: rgb(182 2 2 / 7%);
+  --arena-blue: #3d46c2;
+  --arena-channel-open: #238020;
+  --arena-channel-open-background: #f4f8f3;
+  /* are.na only has two tint steps per status; :active blends toward the
+     stronger step 2 tint rather than applying it at full strength. */
+  --arena-channel-open-active-background: color-mix(in srgb, #b4d6b3 40%, #f4f8f3);
+  --arena-channel-closed: #333;
+  /* Closed rows rest on the plain surface; the gray1 tint that used to be
+     their resting state is the hover/active feedback instead (j's call after
+     the T3 browser check — the tinted resting rows read too dark). */
+  --arena-channel-closed-background: transparent;
+  --arena-channel-closed-active-background: #f7f7f7;
+  --arena-channel-private: #b93d3d;
+  --arena-channel-private-background: #faf4f3;
+  --arena-channel-private-active-background: color-mix(in srgb, #dfbebe 40%, #faf4f3);
 
-  --arena-radius: 0.25rem;
+  --arena-radius: 3px;
   --arena-space-1: 4px;
   --arena-space-2: 8px;
   --arena-space-3: 12px;
@@ -45,30 +62,30 @@
   accent-color: var(--arena-blue);
   background: var(--arena-surface);
   color: var(--arena-text);
-  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  font-family: "areal fallback", Arial, "Helvetica Neue", Helvetica, sans-serif;
   font-synthesis: none;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --arena-black: #d3d3d3;
-    --arena-text: #d3d3d3;
-    --arena-muted: #6e6e6e;
-    --arena-line: #2f2f2f;
-    --arena-soft: #131313;
+    --arena-black: #e5e5e5;
+    --arena-text: #b2b2b2;
+    --arena-muted: #696969;
+    --arena-line: #333333;
+    --arena-soft: #1a1a1a;
     --arena-surface: #000;
-    --arena-input: #080a0b;
-    --arena-control-border: #444;
-    --arena-control-active: #6e6e6e;
-    --arena-blue: #17b0e2;
-    --arena-channel-open: #2ba425;
-    --arena-channel-open-background: rgb(43 164 37 / 10%);
-    --arena-channel-open-active-background: rgb(43 164 37 / 16%);
-    --arena-channel-closed: #d3d3d3;
-    --arena-channel-closed-background: rgb(211 211 211 / 7%);
-    --arena-channel-closed-active-background: rgb(211 211 211 / 12%);
-    --arena-channel-private: #e24937;
-    --arena-channel-private-background: rgb(226 73 55 / 10%);
-    --arena-channel-private-active-background: rgb(226 73 55 / 16%);
+    --arena-input: #1a1a1a;
+    --arena-control-border: #4f4f4f;
+    --arena-control-active: #696969;
+    --arena-blue: #5e6dee;
+    --arena-channel-open: #98dc89;
+    --arena-channel-open-background: #121d12;
+    --arena-channel-open-active-background: color-mix(in srgb, #2a4c29 40%, #121d12);
+    --arena-channel-closed: #e5e5e5;
+    --arena-channel-closed-background: transparent;
+    --arena-channel-closed-active-background: #1a1a1a;
+    --arena-channel-private: #eb6864;
+    --arena-channel-private-background: #1a0404;
+    --arena-channel-private-active-background: color-mix(in srgb, #412020 40%, #1a0404);
   }
 }

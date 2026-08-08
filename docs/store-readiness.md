@@ -1,12 +1,12 @@
 # Chrome Web Store readiness checklist
 
-Are.na Connections currently ships as a load-unpacked build (the committed
-`dist/`) and is not yet published to the Chrome Web Store. This checklist
-covers what is left before a first store release.
+Are.na Connections currently ships as a local build (`npm run build:chrome`,
+then load `dist/chrome` unpacked) and is not yet published to the Chrome Web
+Store. This checklist covers what is left before a first store release.
 
 ## Manifest `key` and OAuth redirect
 
-`public/manifest.json` pins a `key` field so the extension keeps a stable ID
+`public/manifest.chrome.json` pins a `key` field so the extension keeps a stable ID
 across unpacked reloads. The Chrome Web Store **rejects uploaded packages
 that contain a `key` field**, so it must be stripped from the zip before
 upload. Removing it means the Store assigns a new extension ID, and that ID
@@ -21,9 +21,10 @@ everyone who installs from the Store.
 - [ ] Register that Store ID's `https://<id>.chromiumapp.org/oauth2`
       redirect URI with the Are.na OAuth application, alongside the existing
       unpacked-dev redirect.
-- [ ] Keep `key` in the repo's `public/manifest.json` (unpacked installs need
-      it for a stable ID); strip it only in the packaging step that builds
-      the store zip, so it never reaches the uploaded package.
+- [x] Keep `key` in the repo's `public/manifest.chrome.json` (unpacked
+      installs need it for a stable ID) and strip it only in the store zip —
+      done: `npm run package` strips it in the zip's staging copy while
+      `dist/chrome/manifest.json` on disk keeps it.
 - [ ] Confirm sign-in works end-to-end from a Store-installed (or draft
       test) build before announcing the release.
 
@@ -80,6 +81,6 @@ everyone who installs from the Store.
 - [ ] Once the Store listing exists, update the README's "Install in
       Chrome" section to link the listing (keep the unpacked instructions
       as a secondary/dev path if desired).
-- [ ] The committed `dist/` in this repo stays as-is for unpacked installs;
-      build the Store upload zip fresh from `npm run build` (with `key`
-      stripped, per above) rather than reusing the committed `dist/`.
+- [ ] Build the Store upload zip with `npm run package` (it rebuilds from
+      source and strips `key` automatically); never upload a `dist/` folder
+      zipped by hand.

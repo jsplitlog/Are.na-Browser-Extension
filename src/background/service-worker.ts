@@ -1,10 +1,11 @@
-import { getAuthState, signInWithOAuth, signOut } from '../core/auth';
+import { completeOAuth, completeOAuthFromCandidates, getAuthState, signInWithOAuth, signOut } from '../core/auth';
 import { ACTIVE_PAGE_KEY, type ActivePageRequest } from '../core/active-page';
 import { createRequestBudget } from '../core/arena';
 import { getCached } from '../core/cache';
 import { isRequest, type Request, type Response } from '../core/messages';
 import { blocksFor, connectionsFor } from '../core/resolve';
 import type { LookupResult } from '../core/types';
+import { platform } from '../platform';
 
 const lookups = new Map<string, Promise<LookupResult>>();
 const connections = new Map<string, Promise<LookupResult>>();
@@ -57,11 +58,33 @@ const route = async (request: Request): Promise<Response> => {
     case 'signIn':
       await signInWithOAuth(request.remember);
       return { kind: 'ok' };
+    case 'completeOAuth':
+      // Popup-driven completion for Safari: iOS never delivers tabs.onUpdated
+      // to this page (verified in docs/ios-findings.md), so the popup finds
+      // parked callback tabs on reopen and hands their URLs over. The message
+      // itself revives this page — the same wake path every other request
+      // rides. Selection by pending-state match happens in core/auth.ts so a
+      // stale parked tab can't consume the single-use pending record.
+      await completeOAuthFromCandidates(request.callbackUrls);
+      return { kind: 'ok' };
     case 'signOut':
       await signOut();
       return { kind: 'ok' };
   }
 };
+
+// Registered at the top level, before any await, so the browser can revive a
+// suspended background page to deliver the OAuth callback. On Safari — iOS
+// especially — the page that started the flow is already gone by the time the
+// redirect lands, so this is the only thing left to finish sign-in. No-op on
+// Chrome and Firefox, where chrome.identity resolves the flow in-process.
+platform.registerAuthCallback((callbackUrl) => {
+  // Candidates path, not completeOAuth directly: it matches state before the
+  // single-use pending record is consumed, so a mismatched callback (a stale
+  // reloaded tab, a second in-flight attempt's older tab, or any webpage
+  // navigating to the redirect URL) can't burn a live flow.
+  void completeOAuthFromCandidates([callbackUrl]).catch(() => undefined);
+});
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
   if (!isRequest(message)) {
@@ -86,8 +109,9 @@ chrome.action.onClicked.addListener((tab) => {
   } satisfies ActivePageRequest;
 
   // Start the session handoff before opening, while preserving the action click's
-  // user activation for chrome.sidePanel.open(). The panel also observes storage
-  // changes, so a slower storage write cannot leave it showing stale page data.
+  // user activation for platform.openPanel() (a synchronous call into the target's
+  // panel-open API — see src/platform/). The panel also observes storage changes,
+  // so a slower storage write cannot leave it showing stale page data.
   void chrome.storage.session.set({ [ACTIVE_PAGE_KEY]: request }).catch(() => undefined);
-  void chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => undefined);
+  void platform.openPanel(tab).catch(() => undefined);
 });

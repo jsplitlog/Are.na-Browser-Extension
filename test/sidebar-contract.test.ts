@@ -4,7 +4,21 @@ import { describe, expect, it } from 'vitest';
 import { isRequest } from '../src/core/messages';
 
 const root = resolve(import.meta.dirname, '..');
-const manifest = JSON.parse(readFileSync(resolve(root, 'public/manifest.json'), 'utf8')) as {
+const readManifestJson = (relativePath: string): Record<string, unknown> =>
+  JSON.parse(readFileSync(resolve(root, relativePath), 'utf8')) as Record<string, unknown>;
+
+// The shipped Chrome manifest is public/manifest.base.json merged with the
+// public/manifest.chrome.json overlay (see scripts/build-manifest.mjs). The
+// only array field either file sets is `permissions`, so recreating that
+// merge here only needs a plain spread plus an append — this asserts against
+// exactly what dist/chrome/manifest.json contains for the Chrome target.
+const base = readManifestJson('public/manifest.base.json');
+const chromeOverlay = readManifestJson('public/manifest.chrome.json');
+const manifest = {
+  ...base,
+  ...chromeOverlay,
+  permissions: [...(base.permissions as string[]), ...(chromeOverlay.permissions as string[])],
+} as {
   action?: { default_popup?: string };
   minimum_chrome_version?: string;
   options_page?: string;
@@ -41,12 +55,12 @@ describe('side panel release contract', () => {
     expect(sidepanelHtml).toContain('<meta name="color-scheme" content="light dark">');
     expect(themeStyles).toContain('@media (prefers-color-scheme: dark)');
     expect(themeStyles).toContain('--arena-surface: #000');
-    expect(themeStyles).toContain('--arena-black: #d3d3d3');
-    expect(themeStyles).toContain('--arena-line: #2f2f2f');
-    expect(themeStyles).toContain('--arena-blue: #17b0e2');
-    expect(themeStyles).toContain('--arena-channel-open: #2ba425');
-    expect(themeStyles).toContain('--arena-channel-closed: #d3d3d3');
-    expect(themeStyles).toContain('--arena-channel-private: #e24937');
+    expect(themeStyles).toContain('--arena-black: #e5e5e5');
+    expect(themeStyles).toContain('--arena-line: #333333');
+    expect(themeStyles).toContain('--arena-blue: #5e6dee');
+    expect(themeStyles).toContain('--arena-channel-open: #98dc89');
+    expect(themeStyles).toContain('--arena-channel-closed: #e5e5e5');
+    expect(themeStyles).toContain('--arena-channel-private: #eb6864');
   });
 
   it('shares the Reader design tokens with the sidebar', () => {
@@ -57,7 +71,7 @@ describe('side panel release contract', () => {
     expect(themeStyles).toContain('--arena-row-padding: 14px');
     expect(themeStyles).toContain('--arena-text-title: 0.875rem');
     expect(themeStyles).toContain('--arena-text-ui: 0.75rem');
-    expect(themeStyles).toContain('--arena-radius: 0.25rem');
+    expect(themeStyles).toContain('--arena-radius: 3px');
     expect(themeStyles).toContain('--arena-control-active: #999');
     expect(themeStyles).toContain('--arena-avatar-size: 14px');
     expect(sidepanelStyles).toContain('--panel-gutter: var(--arena-gutter)');
@@ -92,9 +106,9 @@ describe('side panel release contract', () => {
     expect(sidepanelSource).toContain("case 'closed':");
     expect(sidepanelSource).toContain("case 'private':");
     expect(sidepanelSource).toContain("return 'channel-private'");
-    expect(themeStyles).toContain('--arena-channel-open: #17ac10');
-    expect(themeStyles).toContain('--arena-channel-closed: #4b3d67');
-    expect(themeStyles).toContain('--arena-channel-private: #b60202');
+    expect(themeStyles).toContain('--arena-channel-open: #238020');
+    expect(themeStyles).toContain('--arena-channel-closed: #333');
+    expect(themeStyles).toContain('--arena-channel-private: #b93d3d');
     expect(sidepanelStyles).toContain('.block-copy.channel-closed');
     expect(sidepanelStyles).toContain('.block-copy.channel-private');
     expect(sidepanelSource).toContain("'metadata-content'");
@@ -124,6 +138,9 @@ describe('background message contract', () => {
     expect(isRequest({ kind: 'getConnections', normalizedUrl: 'example.com/a' })).toBe(true);
     expect(isRequest({ kind: 'getAuthState' })).toBe(true);
     expect(isRequest({ kind: 'signIn', remember: false })).toBe(true);
+    expect(isRequest({ kind: 'completeOAuth', callbackUrls: ['https://jsplitlog.github.io/arena-connections/oauth2.html?code=x&state=y'] })).toBe(true);
+    expect(isRequest({ kind: 'completeOAuth', callbackUrls: [42] })).toBe(false);
+    expect(isRequest({ kind: 'completeOAuth' })).toBe(false);
     expect(isRequest({ kind: 'signOut' })).toBe(true);
   });
 
@@ -141,5 +158,50 @@ describe('background message contract', () => {
   it('answers unvalidated messages with an error instead of routing them', () => {
     expect(serviceWorkerSource).toContain('if (!isRequest(message))');
     expect(serviceWorkerSource).not.toContain('message as Request');
+  });
+});
+
+// The shipped Safari manifest is public/manifest.base.json merged with the
+// public/manifest.safari.json overlay, using the same merge shape as the
+// Chrome contract above (see scripts/build-manifest.mjs). WS2 owns this page
+// as an action popup rather than the Chrome side panel — these assertions
+// guard the parts of that swap this workstream is responsible for.
+const safariOverlay = readManifestJson('public/manifest.safari.json');
+const safariManifest = {
+  ...base,
+  ...safariOverlay,
+  permissions: [
+    ...(base.permissions as string[]),
+    ...((safariOverlay.permissions as string[] | undefined) ?? []),
+  ],
+} as {
+  action?: { default_popup?: string };
+  background?: { service_worker?: string };
+  key?: string;
+  minimum_chrome_version?: string;
+  permissions?: string[];
+  side_panel?: { default_path?: string };
+};
+
+describe('safari popup contract', () => {
+  it('opens as an action popup instead of the Chrome side panel', () => {
+    expect(safariManifest.action?.default_popup).toBe('sidepanel/sidepanel.html');
+    expect(safariManifest.background?.service_worker).toBe('background/service-worker.js');
+    expect(safariManifest.side_panel).toBeUndefined();
+    expect(safariManifest.key).toBeUndefined();
+    expect(safariManifest.minimum_chrome_version).toBeUndefined();
+    expect(safariManifest.permissions).not.toContain('identity');
+    expect(safariManifest.permissions).not.toContain('sidePanel');
+  });
+
+  it('sizes the popup without reintroducing the old fixed sidebar width', () => {
+    expect(sidepanelStyles).toContain('body.popup-mode');
+    expect(sidepanelStyles).not.toMatch(/(?:min-|max-)?width:\s*360px/);
+  });
+
+  it('hides the OAuth button when the platform adapter does not support it, falling back to token sign-in', () => {
+    expect(sidepanelSource).toContain('platform.supportsOAuth');
+    expect(sidepanelSource).toContain('signInWithToken');
+    expect(sidepanelSource).not.toContain('chrome.tabs');
   });
 });

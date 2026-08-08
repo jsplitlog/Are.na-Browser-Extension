@@ -1,9 +1,23 @@
 import './sidepanel.css';
 import { ACTIVE_PAGE_KEY, isActivePageRequest } from '../core/active-page';
+import { signInWithToken } from '../core/auth';
 import { formatBlockCreatedDate, formatOldestBlockAge } from '../core/block-date';
 import { nextCopySort, sortBlocks, summarizeConnectionCounts, type CopySort } from '../core/copy-sort';
 import type { Request, Response } from '../core/messages';
 import type { ArenaBlock, ArenaChannel, LookupResult } from '../core/types';
+import { platform } from '../platform';
+// Imported unconditionally so Rollup can see the binding; only ever called
+// behind `__TARGET__ === 'safari'` below, so dead-branch elimination drops
+// this module (and its tab-querying implementation) out of the Chrome and
+// Firefox bundles — see the comment on resolveActivePageForPopup in
+// src/platform/safari.ts.
+import { closeAuthCallbackTabs, findPendingAuthCallbackTabs, resolveActivePageForPopup } from '../platform/safari';
+
+// Safari has no sidebar API: this page runs as an action popup there instead
+// of a persistent panel (manifest overlay owns action.default_popup). The
+// popup needs explicit sizing (see sidepanel.css `.popup-mode`); Chrome and
+// Firefox keep the unscoped sidebar layout untouched.
+if (__TARGET__ === 'safari') document.body.classList.add('popup-mode');
 
 const app = document.querySelector<HTMLElement>('#app');
 
@@ -113,8 +127,6 @@ const renderSignIn = (errorMessage = ''): void => {
     element('p', 'auth-description', 'Explore Are.na connections from any page.'),
   );
 
-  const button = element('button', 'auth-primary', 'Sign in with Are.na ✶✶');
-  button.type = 'button';
   const message = element('p', 'auth-message', errorMessage);
   message.setAttribute('role', 'alert');
   message.setAttribute('aria-live', 'polite');
@@ -131,25 +143,80 @@ const renderSignIn = (errorMessage = ''): void => {
   source.append(githubIcon(), document.createTextNode('View source'));
   footer.append(remember, source);
 
-  button.addEventListener('click', async () => {
-    button.disabled = true;
-    button.textContent = 'Connecting…';
-    message.textContent = '';
-    try {
-      const response = await send({ kind: 'signIn', remember: checkbox.checked });
-      if (response.kind === 'error') throw new Error(response.message);
-      if (response.kind !== 'ok') throw new Error('Could not sign in with Are.na.');
-      if (latestRequestUrl) await startLookup(latestRequestUrl);
-      else renderIdle();
-    } catch (error) {
-      renderSignIn(error instanceof Error ? error.message : 'Could not sign in with Are.na.');
-    }
-  });
+  // Targets can offer either sign-in path or both: Safari runs OAuth through a
+  // page we host, so it keeps token paste-in alongside as a permanent fallback
+  // (see src/platform/safari.ts). Chrome and Firefox redirect through the
+  // browser itself and show the OAuth button alone.
+  const controls: HTMLElement[] = [];
+  let focusTarget: HTMLElement | undefined;
 
-  card.append(copy, button, message, footer);
+  if (platform.supportsOAuth) {
+    const button = element('button', 'auth-primary', 'Sign in with Are.na ✶✶');
+    button.type = 'button';
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      button.textContent = 'Connecting…';
+      message.textContent = '';
+      try {
+        const response = await send({ kind: 'signIn', remember: checkbox.checked });
+        if (response.kind === 'error') throw new Error(response.message);
+        if (response.kind !== 'ok') throw new Error('Could not sign in with Are.na.');
+        if (latestRequestUrl) await startLookup(latestRequestUrl);
+        else renderIdle();
+      } catch (error) {
+        renderSignIn(error instanceof Error ? error.message : 'Could not sign in with Are.na.');
+      }
+    });
+    controls.push(button);
+    focusTarget = button;
+  }
+
+  if (platform.offersTokenSignIn) {
+    // Access tokens come from https://www.are.na/settings/personal-access-tokens —
+    // an Are.na-supported sign-in method in its own right, not a workaround.
+    const form = element('form', 'auth-token-form');
+    const label = element(
+      'label',
+      'auth-token-label',
+      platform.supportsOAuth ? 'Or paste an access token' : 'Are.na access token',
+    );
+    label.htmlFor = 'auth-token-input';
+    const input = element('input', 'auth-token-input');
+    input.id = 'auth-token-input';
+    input.type = 'password';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.required = true;
+    input.placeholder = 'Paste your access token';
+    const submit = element('button', platform.supportsOAuth ? 'auth-secondary' : 'auth-primary', 'Connect');
+    submit.type = 'submit';
+    form.append(label, input, submit);
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      submit.disabled = true;
+      input.disabled = true;
+      submit.textContent = 'Connecting…';
+      message.textContent = '';
+      try {
+        await signInWithToken(input.value, checkbox.checked);
+        if (latestRequestUrl) await startLookup(latestRequestUrl);
+        else renderIdle();
+      } catch (error) {
+        submit.disabled = false;
+        input.disabled = false;
+        submit.textContent = 'Connect';
+        renderSignIn(error instanceof Error ? error.message : 'Could not sign in with Are.na.');
+      }
+    });
+    controls.push(form);
+    focusTarget ??= input;
+  }
+
+  card.append(copy, ...controls, message, footer);
+
   view.append(card);
   replaceApp(view);
-  requestAnimationFrame(() => button.focus());
+  requestAnimationFrame(() => focusTarget?.focus());
 };
 
 const renderLookupStatus = (result: LookupResult): void => {
@@ -440,7 +507,40 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   if (change) handleActivePage(change.newValue);
 });
 
+// Safari only: if OAuth callback tabs are parked (iOS never delivers them to
+// the background — docs/ios-findings.md), hand every candidate over and let
+// core/auth.ts pick the one matching the pending flow's state — a stale tab
+// from an abandoned attempt must not consume the single-use pending record.
+// All parked tabs are swept after the attempt: matched or not, none can ever
+// complete again. A failed completion surfaces on the sign-in card: the user
+// just came back from are.na expecting to be signed in, so a silent return
+// to the sign-in card reads as the extension having ignored them.
+const completeParkedOAuth = async (): Promise<string | null> => {
+  const parked = await findPendingAuthCallbackTabs();
+  if (!parked.length) return null;
+  let response: Response;
+  try {
+    response = await send({ kind: 'completeOAuth', callbackUrls: parked.map(({ callbackUrl }) => callbackUrl) });
+  } catch {
+    // Transport failure: the completion never ran, so the callback may still
+    // be spendable — leave the tabs parked so reopening the popup retries.
+    return 'Could not finish signing in. Reopen the extension to try again.';
+  }
+  await closeAuthCallbackTabs(parked.map(({ tabId }) => tabId));
+  return response.kind === 'error' ? response.message : null;
+};
+
 const initialize = async (): Promise<void> => {
+  // Chrome/Firefox get ACTIVE_PAGE_KEY from action.onClicked (see
+  // background/service-worker.ts). Safari's popup supersedes that listener,
+  // so the popup resolves the active tab itself on open, before the read below.
+  let oauthError: string | null = null;
+  if (__TARGET__ === 'safari') {
+    [, oauthError] = await Promise.all([
+      resolveActivePageForPopup().catch(() => undefined),
+      completeParkedOAuth().catch(() => null),
+    ]);
+  }
   try {
     const [stored, auth] = await Promise.all([
       chrome.storage.session.get(ACTIVE_PAGE_KEY),
@@ -452,7 +552,7 @@ const initialize = async (): Promise<void> => {
         latestRequestedAt = activePage.requestedAt;
         latestRequestUrl = activePage.url;
       }
-      renderSignIn();
+      renderSignIn(oauthError ?? '');
       return;
     }
     if (isActivePageRequest(activePage)) {
