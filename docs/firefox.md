@@ -211,35 +211,46 @@ because that's the plan's documented floor for `storage.session` support
 **j's call** whether 115.0 stays or moves up. Left at 115.0 for now since
 the warnings are informational only (0 errors, 0 notices).
 
-## Manual smoke test (run in an actual Firefox)
+## Manual smoke test — passed 2026-08-08
 
-Status: **OAuth sign-in confirmed working** (step 7) on 2026-08-07. The
-remaining steps are unrun — no agent can launch Firefox interactively.
+Run against the **signed unlisted build** installed from `.xpi` (not a
+temporary add-on), in release Firefox.
 
-Note on loading: unsigned builds install only as a **temporary add-on** via
+- [x] Installs permanently and **survives quitting Firefox** — no
+      `about:debugging`, no Allow Unsigned Extensions.
+- [x] Toolbar button opens the sidebar on the same click (the
+      user-activation constraint `sidebarAction.open()` imposes — see
+      `src/platform/firefox.ts`).
+- [x] **Sign in with Are.na** (OAuth) — works on the signed build with the
+      same redirect URI as the temporary install, confirming the URI follows
+      the gecko id rather than the install method.
+- [x] Lookup hit: matching blocks and channels render.
+- [x] Lookup miss: clean empty state, no error.
+- [x] Connections expand: channel list and counts load.
+- [x] Sign out returns the sign-in card; "Remember device" persistence
+      behaves across a restart.
+
+### Known cosmetic issue: very narrow sidebar
+
+Firefox's sidebar resizes **below Chrome's 320px minimum**, so the layout
+reaches widths it was never designed for. At the narrowest setting it looks
+awkward — ordinary responsive crowding, nothing clipped, broken, or
+unreadable. Observed and accepted 2026-08-08; recorded here so it isn't
+re-reported as a bug. Worth a look only if the sidebar layout gets revisited
+(see `docs/ui-refresh-plan.md`).
+
+### Re-running this later
+
+To rebuild and re-sign after changes (bump `version` in both `package.json`
+and `public/manifest.base.json` first — AMO rejects a version it has already
+signed):
+
+```sh
+npm run sign:firefox   # with WEB_EXT_API_KEY / WEB_EXT_API_SECRET exported
+```
+
+For a quick throwaway check without signing, a temporary add-on is still
+fine: `npx web-ext run --source-dir dist/firefox`, or
 `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on…** →
-select `dist/firefox/manifest.json`. The Extensions manager's "Install
-Add-on From File…" only accepts a packaged, signed `.xpi`, and greys the
-manifest out. Temporary add-ons are removed when Firefox quits.
-
-1. `npm run build:firefox && npx web-ext run --source-dir dist/firefox`
-2. On a page not on Are.na, click the extension's toolbar button — the
-   sidebar should open immediately (same click, no delay) showing either a
-   lookup-in-progress state or the sign-in card.
-3. Visit a URL you know is saved to an Are.na channel, click the button
-   again — confirm a **lookup hit**: the matching block(s) and channel(s)
-   appear.
-4. Visit a URL you know is *not* saved anywhere, click the button — confirm
-   a **lookup miss** renders sanely (no error, clear empty state).
-5. On a hit, expand a block's **connections** — confirm the channel list
-   and connection counts load.
-6. Sign in via **token paste-in** (`core/auth.ts` `signInWithToken`) —
-   confirmed working end to end since it doesn't depend on the redirect URI
-   registration above.
-7. ✅ **Sign in with Are.na** (the OAuth button) — confirmed working
-   2026-08-07, once the redirect URI above was registered.
-8. **Sign out** — confirm the token is cleared and the sidebar returns to
-   the sign-in card.
-9. Restart Firefox (or reload the temporary add-on) and **reopen the
-   sidebar** — confirm "Remember device" persistence behaves as expected
-   (signed-in state survives if it was checked, cleared if not).
+`dist/firefox/manifest.json`. Note the Extensions manager's "Install Add-on
+From File…" only accepts a signed `.xpi` and greys out `manifest.json`.
