@@ -106,14 +106,42 @@ Caveat on that probe: it tests a *cold* background, the hardest case. In the
 real flow the background is warm when the tab opens, so it may still complete.
 That distinction is untested.
 
-**Likely next step if iOS OAuth is wanted:** register a **content script** on
-the redirect URL that reads `location.href` and `runtime.sendMessage`s it to
-the background. A content script injection wakes the extension where a
-`tabs` event apparently does not, and it removes the need for the
-`jsplitlog.github.io` host permission's `tabs.onUpdated` dependency entirely.
-That is a manifest change plus a small script, not a redesign — the
-`beginOAuth`/`completeOAuth` split above is exactly what such a script would
-call into.
+**The content-script attempt (2026-08-08) — implemented, still unverified,
+and it makes the permission story worse.**
+
+`src/content/oauth-callback.ts` is injected on the redirect URL by
+`manifest.safari.json`'s `content_scripts` and messages the callback URL to
+the background, which handles it as an `oauthCallback` request. The theory:
+message delivery revives a suspended background page where a `tabs` event
+does not. `tabs.onUpdated` and `registerAuthCallback` were removed in favour
+of it.
+
+Two things to know before building on this:
+
+1. **Not confirmed working.** The same probe (navigating to the redirect URL
+   and watching for the extension to close the tab) did not fire on iOS 26.5
+   either. That could be the fix genuinely failing, or the probe being
+   invalid — a content script needs the per-site permission granted and may
+   need a Safari relaunch after reinstall, neither of which was conclusively
+   established. **Treat iOS OAuth as unverified, not as working.**
+2. **It escalates the iOS permission prompt.** Because content scripts inject
+   into pages, iOS 26 relabels the extension's permission from
+   *"Browsing History — can see your browsing history on the current tab's
+   webpage"* to:
+
+   > **Webpage Contents and Browsing History** — Can read and alter sensitive
+   > information on webpages, including passwords, phone numbers, and credit
+   > cards…
+
+   `jsplitlog.github.io` also still appears as a per-site entry, so dropping
+   it from `host_permissions` did **not** shrink the surface. For an extension
+   whose whole pitch is that it only looks things up when you ask, that is a
+   meaningful cost — arguably worse than the problem it solves.
+
+Given both, the honest options are unchanged from the earlier decision point:
+verify this properly on a real device, or drop Safari OAuth entirely and keep
+token paste-in, which works on both Safari platforms today and needs no
+hosted page, no content script, and no second permission.
 
 Unrelated to OAuth, the original lifecycle assessment still holds for lookups:
 the in-memory maps in `background/service-worker.ts` are dedupe caches and

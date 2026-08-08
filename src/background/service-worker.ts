@@ -40,7 +40,7 @@ const loadConnections = async (normalizedUrl: string): Promise<LookupResult> => 
   return pending;
 };
 
-const route = async (request: Request): Promise<Response> => {
+const route = async (request: Request, sender?: chrome.runtime.MessageSender): Promise<Response> => {
   switch (request.kind) {
     case 'lookup':
       return { kind: 'result', result: await lookup(request.url) };
@@ -61,24 +61,24 @@ const route = async (request: Request): Promise<Response> => {
     case 'signOut':
       await signOut();
       return { kind: 'ok' };
+    case 'oauthCallback': {
+      // Delivering this message is itself what revives a suspended background
+      // page on Safari/iOS — see src/content/oauth-callback.ts. completeOAuth
+      // validates the URL against the persisted flow before trusting it.
+      await completeOAuth(request.url);
+      // The redirect page has served its purpose; close the tab it arrived on.
+      if (sender?.tab?.id !== undefined) void chrome.tabs.remove(sender.tab.id).catch(() => undefined);
+      return { kind: 'ok' };
+    }
   }
 };
 
-// Registered at the top level, before any await, so the browser can revive a
-// suspended background page to deliver the OAuth callback. On Safari — iOS
-// especially — the page that started the flow is already gone by the time the
-// redirect lands, so this is the only thing left to finish sign-in. No-op on
-// Chrome and Firefox, where chrome.identity resolves the flow in-process.
-platform.registerAuthCallback((callbackUrl) => {
-  void completeOAuth(callbackUrl).catch(() => undefined);
-});
-
-chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
   if (!isRequest(message)) {
     sendResponse({ kind: 'error', message: 'Unsupported request.' } satisfies Response);
     return true;
   }
-  void route(message)
+  void route(message, sender)
     .then(sendResponse)
     .catch((error: unknown) => sendResponse({
       kind: 'error',

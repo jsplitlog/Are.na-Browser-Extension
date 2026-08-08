@@ -7,7 +7,11 @@ export type Request =
   | { kind: 'getConnections'; normalizedUrl: string }  // phase 2
   | { kind: 'getAuthState' }
   | { kind: 'signIn'; remember: boolean }
-  | { kind: 'signOut' };
+  | { kind: 'signOut' }
+  // Sent by content/oauth-callback.ts on targets whose OAuth callback arrives as
+  // a navigation rather than in-process (Safari). The URL is untrusted until
+  // core/auth.ts's completeOAuth checks it against the persisted flow.
+  | { kind: 'oauthCallback'; url: string };
 
 /** Anything can post to a service worker, so the router only ever sees vetted shapes. */
 export const isRequest = (value: unknown): value is Request => {
@@ -17,6 +21,7 @@ export const isRequest = (value: unknown): value is Request => {
     case 'lookup': return typeof request.url === 'string';
     case 'getConnections': return typeof request.normalizedUrl === 'string';
     case 'signIn': return typeof request.remember === 'boolean';
+    case 'oauthCallback': return typeof request.url === 'string';
     case 'getAuthState':
     case 'signOut': return true;
     default: return false;

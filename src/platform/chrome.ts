@@ -10,8 +10,6 @@ export const chromePlatform: PlatformAdapter = {
   },
   getRedirectURL: (path) => chrome.identity.getRedirectURL(path),
   launchAuthFlow: (url) => chrome.identity.launchWebAuthFlow({ url, interactive: true }),
-  // chrome.identity resolves the callback in-process, so there is no event to
-  // watch and nothing to survive.
+  // chrome.identity resolves the callback in-process, so nothing has to survive.
   completesAuthInBackground: false,
-  registerAuthCallback: () => undefined,
 };

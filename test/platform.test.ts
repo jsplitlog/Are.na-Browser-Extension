@@ -234,17 +234,32 @@ describe('safari oauth redirect contract', () => {
     expect(existsSync(published)).toBe(true);
   });
 
-  it('is covered by the Safari manifest host_permissions', () => {
-    const origin = new URL(redirectUrl as string).origin;
-    // host_permissions is not the `permissions` key, so scripts/build-manifest.mjs
-    // replaces rather than appends it — the overlay must restate api.are.na itself.
+  it('has a content script injected on exactly that URL', () => {
+    // The callback is delivered by content/oauth-callback.ts messaging the
+    // background — message delivery revives a suspended background page on iOS,
+    // where a tabs event does not. If the match pattern and the redirect URL
+    // drift apart, the script never runs and sign-in hangs with no error.
+    const overlay = JSON.parse(readFileSync(resolve(root, 'public/manifest.safari.json'), 'utf8')) as {
+      content_scripts?: { matches?: string[]; js?: string[] }[];
+      host_permissions?: string[];
+    };
+    const script = overlay.content_scripts?.[0];
+    expect(script?.js).toEqual(['content/oauth-callback.js']);
+    const pattern = script?.matches?.[0] as string;
+    expect(pattern).toBeTruthy();
+    // The pattern is the redirect URL plus a trailing wildcard for ?code=&state=.
+    expect(pattern.replace(/\*$/, '')).toBe(redirectUrl);
+    expect(existsSync(resolve(root, 'src/content/oauth-callback.ts'))).toBe(true);
+  });
+
+  it('needs no host permission for the redirect origin', () => {
+    // content_scripts.matches grants the injection on its own. Declaring the
+    // origin in host_permissions as well would enlarge the per-site permission
+    // prompt iOS shows users, for nothing — see docs/ios-findings.md.
     const overlay = JSON.parse(readFileSync(resolve(root, 'public/manifest.safari.json'), 'utf8')) as {
       host_permissions?: string[];
     };
-    const hostPermissions = overlay.host_permissions ?? [];
-    // Without host access to this origin, tabs.onUpdated withholds changeInfo.url
-    // and the flow's watcher never sees the callback.
-    expect(hostPermissions.some((pattern) => pattern.startsWith(origin))).toBe(true);
-    expect(hostPermissions).toContain('https://api.are.na/*');
+    const origin = new URL(redirectUrl as string).origin;
+    expect(overlay.host_permissions ?? []).not.toContain(`${origin}/*`);
   });
 });
