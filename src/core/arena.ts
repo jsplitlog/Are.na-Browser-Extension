@@ -175,9 +175,9 @@ const mergeBlock = (existing: ArenaBlock, incoming: ArenaBlock): ArenaBlock => (
 export const searchBlocks = async (url: string, budget?: RequestBudget): Promise<ArenaBlock[]> => {
   const target = normalizeUrl(url);
   const found = new Map<number, ArenaBlock>();
-  for (const query of buildQueries(url).slice(0, 2)) {
-    const body = asRecord(await request('/search', { query, type: TYPES, per: String(SEARCH_PER_PAGE) }, true, budget));
-    const data = body && Array.isArray(body.data) ? body.data : [];
+  const collect = (body: unknown): void => {
+    const record = asRecord(body);
+    const data = record && Array.isArray(record.data) ? record.data : [];
     for (const raw of data) {
       const block = parseBlock(raw);
       let sourceMatches = false;
@@ -193,6 +193,20 @@ export const searchBlocks = async (url: string, budget?: RequestBudget): Promise
         const existing = found.get(block.id);
         found.set(block.id, existing ? mergeBlock(existing, block) : block);
       }
+    }
+  };
+  for (const query of buildQueries(url).slice(0, 2)) {
+    const params = { query, type: TYPES, per: String(SEARCH_PER_PAGE) };
+    collect(await request('/search', params, true, budget));
+    // The default scope leaves out the caller's own private blocks, so saves
+    // into private channels never surfaced. `scope=my` is the documented way
+    // to search that content; it runs as a best-effort second pass and must
+    // not fail a lookup the public pass already answered.
+    try {
+      collect(await request('/search', { ...params, scope: 'my' }, true, budget));
+    } catch {
+      // Budget exhaustion or a transient error here costs private-channel
+      // rows, not the whole result.
     }
     if (found.size >= 5) break;
   }
