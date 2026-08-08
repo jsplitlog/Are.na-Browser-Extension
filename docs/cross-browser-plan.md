@@ -1,7 +1,36 @@
 # Cross-Browser Support Plan (Firefox, Safari, iOS Safari)
 
-Status: draft for subagent execution — 2026-08-07
+Status: WS0/WS1/WS2/WS4 landed; WS3 (iOS) is the only open workstream — evaluated 2026-08-07
 Owner: j
+
+## Progress evaluation — 2026-08-07
+
+Verified against the branch (not just the commit messages): `npm test` passes
+(13 files, 126 tests) from this checkout, `npm run build` produces all three
+targets, and per-target dead-branch elimination holds (the Safari bundles
+contain zero `sidePanel`/`identity` references; Chrome and Firefox each carry
+only their own panel API, in the shared `assets/auth-*.js` chunk).
+
+| WS | Status | Notes |
+| --- | --- | --- |
+| WS0 foundation | ✅ done | Adapter + overlay build verified end-to-end; handoff notes below. |
+| WS1 Firefox | ✅ code done | Real `sidebarAction` adapter with the sync-user-activation constraint honored and regression-tested; full manifest overlay incl. `gecko.id` and `data_collection_permissions`. `web-ext lint` is clean of errors; 2 remaining warnings are benign (the `data_collection_permissions` key isn't *recognized* until FF 140, but older Firefox ignores unknown keys). Docs: `docs/firefox.md`. Not yet done: in-browser smoke run. |
+| WS2 Safari macOS | ✅ code done | Popup overlay + `resolveActivePageForPopup` handoff, popup sizing CSS, tab-based OAuth flow fully implemented but **gated off** (`supportsOAuth: false`) behind the unregistered redirect URI — sign-in is token paste until human task 1 clears. Converter output committed intent: Xcode project exists at `apple/` with macOS+iOS app/extension targets, wired to `dist/safari/` via live folder references (packages current build automatically, no resource sync step). Docs: `docs/safari.md`. Not yet done: **`apple/` is still untracked in git** — needs `git add` + commit (j's call, flagged below); in-Safari smoke run. |
+| WS3 iOS | ⬜ open | Substantially de-risked by WS2 — see the rewritten section below. |
+| WS4 tests/packaging/CI | ✅ done | Clean-clone `npm test` regression fixed; `scripts/package.mjs` real; CI workflow present. The README follow-up WS4 flagged (install flow depended on committed `dist/`) was resolved in `89d8a0f`: README now instructs `npm ci && npm run build:chrome` → load `dist/chrome` unpacked. |
+
+Remaining work, in order:
+
+1. **Commit `apple/`** (or decide not to track it). Everything under
+   `apple/Are.na Connections/` is currently untracked, which means the WS2
+   deliverable exists only on this machine. The project references
+   `dist/safari` relatively, so it is safe to commit as-is.
+2. **Manual smoke runs** — Chrome (regression), Firefox, Safari — using the
+   checklist at the bottom of this doc. No agent has run a real browser yet;
+   all verification so far is build/test-level.
+3. **WS3 spike** (below) — now mostly *verification* rather than porting.
+4. **Human tasks** (unchanged, gate OAuth-on-Safari and any distribution):
+   redirect URI registration, AMO decision, Apple Developer Program.
 
 ## Current state (verified against the repo)
 
@@ -58,8 +87,10 @@ Everything else is manifest plumbing. The actual engineering is:
 ## Workstreams
 
 Dependency graph: WS0 → (WS1 ∥ WS2) → WS3; WS4 runs alongside WS1/WS2.
+(WS0, WS1, WS2, WS4 are complete — sections kept for the acceptance criteria
+and as the spec the smoke runs verify against. WS3 is the live section.)
 
-### WS0 — Browser abstraction + per-target build (foundation, do first)
+### WS0 — Browser abstraction + per-target build ✅ done
 
 Goal: one `npm run build:<target>` per browser, zero `chrome.sidePanel` /
 `chrome.identity` calls outside an adapter module.
@@ -83,7 +114,7 @@ Goal: one `npm run build:<target>` per browser, zero `chrome.sidePanel` /
   `grep -rn "chrome\.\(sidePanel\|identity\)" src --include='*.ts'` only hits
   `src/platform/`; all vitest suites pass.
 
-### WS1 — Firefox port (after WS0)
+### WS1 — Firefox port ✅ done (smoke run pending — see docs/firefox.md)
 
 - Manifest overlay: `background: { scripts: [...], type: "module" }`,
   `sidebar_action` (default_panel = the same sidepanel HTML, default_icon,
@@ -102,7 +133,7 @@ Goal: one `npm run build:<target>` per browser, zero `chrome.sidePanel` /
   → sign-in (token paste at minimum) in Firefox; note the Firefox redirect URI
   for j to register on the Are.na OAuth app.
 
-### WS2 — Safari macOS port (after WS0)
+### WS2 — Safari macOS port ✅ done (apple/ uncommitted; smoke run pending — see docs/safari.md)
 
 - Manifest overlay: drop `side_panel`, `key`, `minimum_chrome_version`; add
   `action.default_popup: "sidepanel/sidepanel.html"`. Remove the
@@ -126,12 +157,22 @@ Goal: one `npm run build:<target>` per browser, zero `chrome.sidePanel` /
   connections work; sign-in works via token paste; popup layout doesn't
   overflow or double-scroll.
 
-### WS3 — iOS Safari extension (evaluation + spike, after WS2)
+### WS3 — iOS Safari extension (the open workstream) — REVISED 2026-08-07
 
-**Feasibility verdict: yes, and cheaply — same codebase, same converter
-output.** Safari Web Extensions run on iOS 15+; everything this extension
-needs (`storage` incl. `session` on 16.4+, `runtime` messaging, `action`,
-`fetch` to api.are.na, non-persistent background) is supported. What changes:
+**Feasibility verdict stands: yes.** And WS2 already did the heavy lifting the
+original spike assumed would be needed: the converter-generated Xcode project
+at `apple/` **already contains iOS (App) and iOS (Extension) targets** wired to
+`dist/safari/` by live folder references, and `docs/safari.md` has an
+"iOS prep (WS3) — done now vs. deferred" section (e.g. 16px inputs to prevent
+focus zoom already landed). This is now a verification spike, not a port:
+
+1. Build the iOS app target and run it in the Simulator
+   (`mcp` simulator tooling or Xcode directly; no Developer Program needed
+   for Simulator).
+2. Enable the extension in Simulator Safari; walk the smoke checklist
+   (popup-as-sheet rendering, lookup hit/miss, token sign-in, sign-out,
+   remember-me).
+3. Probe the four original risk areas, which remain the real questions:
 
 - **Distribution:** iOS extensions ship only inside an App Store app —
   Apple Developer Program ($99/yr) and App Review are hard requirements.
@@ -153,12 +194,15 @@ needs (`storage` incl. `session` on 16.4+, `runtime` messaging, `action`,
   `activeTab` + `api.are.na` host permission the prompt surface is small —
   verify the first-run experience.
 
-Spike deliverable: iOS target running in Simulator (converter output from
-WS2), a 1-page findings doc on the four risk areas above, and a go/no-go
-on App Store submission effort. Estimated spike size: small — most work is
-the WS2 popup mode.
+Spike deliverable (revised): a screenshot-backed findings doc
+(`docs/ios-findings.md`) covering the smoke checklist plus the risk areas
+above, any responsive/touch CSS fixes it turns up (apply them target-scoped,
+the way WS2's popup sizing was done), and a go/no-go on App Store submission
+effort. Prerequisite: commit `apple/` first (remaining-work item 1), so the
+spike starts from a tracked baseline. Estimated size: small — WS2 consumed
+most of what the original spike budgeted for.
 
-### WS4 — Test matrix + CI packaging (parallel with WS1/WS2)
+### WS4 — Test matrix + CI packaging ✅ done (status notes below)
 
 - Extend vitest coverage for the platform adapters (mock per-target APIs;
   `test/sidebar-contract.test.ts` is the pattern to follow).
@@ -299,7 +343,8 @@ Work through this after any change that touches `src/platform/`, `src/core/auth.
 `src/background/service-worker.ts`, `src/sidepanel/`, or a manifest overlay.
 Repeat once per target that changed (Chrome via `dist/chrome` unpacked; Firefox
 via `web-ext run --source-dir dist/firefox` or a temporary AMO install; Safari
-via the Xcode project once WS2's converter output exists).
+via the Xcode project at `apple/Are.na Connections` — run `npm run build:safari`
+first, since its targets reference `dist/safari/` directly).
 
 ### Chrome
 

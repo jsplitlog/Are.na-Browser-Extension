@@ -66,38 +66,60 @@ decision:** listed vs. unlisted. Given the extension already has a
 the closer match — but it does mean self-hosting the signed `.xpi` and its
 update manifest.
 
-## OAuth redirect URI
+## OAuth redirect URI — registered, working
 
-`identity.getRedirectURL()` on Firefox returns a URI of the shape:
+The Firefox redirect URI is:
 
 ```
-https://<extension-id-hash>.extensions.allizom.org/<path>
+https://0ad619d4912d78649cce9efc30fd890eb36ef69e.extensions.allizom.org/oauth2
 ```
 
-(`core/auth.ts` calls it as `platform.getRedirectURL('oauth2')`, so the
-path segment will be `oauth2`.) The `<extension-id-hash>` is derived
-deterministically from `browser_specific_settings.gecko.id`
-(`arena-connections@jsplit.me`, set in `public/manifest.firefox.json`), so
-it is **stable across rebuilds** as long as that gecko id doesn't change —
-but it is not a value this doc can compute or guess correctly, and stating
-a guessed hash as fact would be worse than not stating one.
+It is registered on the Are.na OAuth application and OAuth sign-in is
+confirmed working in Firefox (2026-08-07).
 
-**To read the real value:** load the built extension (temporary install or
-signed), open `about:debugging#/runtime/this-firefox`, find "Are.na
-Connections," click **Inspect** to open its background-script console, and
-evaluate:
+**The hash is `sha1(gecko.id)`, not a per-install value.** Firefox's
+`identity.getRedirectURL()` is sometimes assumed to derive from the
+extension's random per-profile internal UUID, which would make a single
+registered URI impossible. It doesn't:
 
-```js
-browser.identity.getRedirectURL('oauth2')
+```sh
+printf '%s' 'arena-connections@jsplit.me' | shasum -a 1
+# 0ad619d4912d78649cce9efc30fd890eb36ef69e
 ```
 
-That exact string is what **j must register as an additional redirect URI
-on the Are.na OAuth application** (alongside the existing Chrome
-`https://<id>.chromiumapp.org/oauth2` entry) before sign-in via
-`signInWithOAuth` will work in Firefox. Until it's registered, Firefox
-users can still sign in via manual token paste-in
-(`core/auth.ts` `signInWithToken`), which doesn't depend on this at all —
-so this gap does not block shipping the Firefox build.
+So the URI is a pure function of
+`browser_specific_settings.gecko.id` in `public/manifest.firefox.json` —
+identical on every profile and machine, temporary install or signed build.
+**Changing that gecko id invalidates the registration** and requires
+re-registering the new hash.
+
+The path segment comes from `OAUTH_REDIRECT_PATH` in `core/auth.ts`, which
+the adapter receives via `platform.getRedirectURL('oauth2')`.
+
+To re-read the live value at any time, load the extension, open
+`about:debugging#/runtime/this-firefox`, click **Inspect** on Are.na
+Connections, and evaluate `browser.identity.getRedirectURL('oauth2')`.
+
+### Registering more than one redirect URI on Are.na
+
+Are.na's OAuth application form has a **single-line** Redirect URI field, so
+a newline-separated list can't be typed into it. Multiple URIs work anyway
+when **separated by a space** — the backend splits the stored value on
+whitespace, both when validating the save and when matching at authorize
+time. The field currently holds, on one line:
+
+```
+https://poolkoglmiobmahcbamkbhljhgeooajm.chromiumapp.org/oauth2 https://0ad619d4912d78649cce9efc30fd890eb36ef69e.extensions.allizom.org/oauth2
+```
+
+If a future URI ever fails to save or fails to match, the fallback is a
+separate Are.na OAuth application per target, which means moving
+`OAUTH_CLIENT_ID` out of the shared constant in `core/auth.ts` onto the
+platform adapter. Verify Chrome sign-in as well as Firefox after any edit
+to this field — a value Are.na parses as one malformed URI breaks both.
+
+Token paste-in (`core/auth.ts` `signInWithToken`) never depends on any of
+this and remains the universal fallback.
 
 ## Data collection permissions
 
@@ -143,10 +165,16 @@ because that's the plan's documented floor for `storage.session` support
 **j's call** whether 115.0 stays or moves up. Left at 115.0 for now since
 the warnings are informational only (0 errors, 0 notices).
 
-## Manual smoke test (run in an actual Firefox — not done here)
+## Manual smoke test (run in an actual Firefox)
 
-This environment cannot launch Firefox interactively, so none of the steps
-below have been run. Before relying on the Firefox build:
+Status: **OAuth sign-in confirmed working** (step 7) on 2026-08-07. The
+remaining steps are unrun — no agent can launch Firefox interactively.
+
+Note on loading: unsigned builds install only as a **temporary add-on** via
+`about:debugging#/runtime/this-firefox` → **Load Temporary Add-on…** →
+select `dist/firefox/manifest.json`. The Extensions manager's "Install
+Add-on From File…" only accepts a packaged, signed `.xpi`, and greys the
+manifest out. Temporary add-ons are removed when Firefox quits.
 
 1. `npm run build:firefox && npx web-ext run --source-dir dist/firefox`
 2. On a page not on Are.na, click the extension's toolbar button — the
@@ -162,9 +190,8 @@ below have been run. Before relying on the Firefox build:
 6. Sign in via **token paste-in** (`core/auth.ts` `signInWithToken`) —
    confirmed working end to end since it doesn't depend on the redirect URI
    registration above.
-7. If/when the Firefox redirect URI is registered on the Are.na OAuth app
-   (see above), also try **Sign in with Are.na** (the OAuth button) and
-   confirm the popup flow completes and returns to the sidebar signed in.
+7. ✅ **Sign in with Are.na** (the OAuth button) — confirmed working
+   2026-08-07, once the redirect URI above was registered.
 8. **Sign out** — confirm the token is cleared and the sidebar returns to
    the sign-in card.
 9. Restart Firefox (or reload the temporary add-on) and **reopen the
