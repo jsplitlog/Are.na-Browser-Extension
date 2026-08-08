@@ -9,6 +9,11 @@ export interface PlatformAdapter {
   /** Whether this target can run an interactive OAuth flow. When false, the UI
    *  should hide the OAuth button and rely on token paste-in (see core/auth.ts). */
   readonly supportsOAuth: boolean;
+  /** Whether the sign-in card also offers token paste-in. Targets whose OAuth
+   *  flow depends on something outside the browser — Safari's redirect page —
+   *  keep it as a always-available fallback; Chrome and Firefox redirect through
+   *  the browser itself and need no second path. */
+  readonly offersTokenSignIn: boolean;
   /** Opens the extension's panel/popup. Must be called synchronously within a
    *  user-gesture handler (no `await` before it) — see background/service-worker.ts. */
   openPanel(tab: PlatformTab): Promise<void>;

@@ -1,8 +1,8 @@
 # Safari (macOS + iOS) — WS2 build & run
 
 This is the Safari-specific companion to `docs/cross-browser-plan.md`. It
-covers building the Safari target, converting it to an Xcode project, what
-works today, and what's blocked on a decision from j.
+covers building the Safari target, converting it to an Xcode project, how
+sign-in works, and what still depends on a decision from j.
 
 ## Build
 
@@ -19,6 +19,10 @@ manifest in exactly the ways Safari needs:
   `public/manifest.base.json` never had them; only `manifest.chrome.json`
   adds them, so the Safari overlay simply never introduces them).
 - No `identity` permission (there's no `chrome.identity` on Safari).
+- `host_permissions` adds the OAuth redirect origin
+  (`https://jsplitlog.github.io/arena-connections/*`) alongside
+  `https://api.are.na/*` — required for `tabs.onUpdated` to reveal the
+  callback URL. See the OAuth section below.
 - `permissions` stays at the base set (`activeTab`, `storage`) — no `tabs`
   permission was added; see "Active-page handoff" below for why `activeTab`
   is enough.
@@ -79,16 +83,10 @@ extension requires the interactive Safari + System Settings flow, which this
 environment cannot drive. Do the manual smoke checklist below before
 shipping.
 
-`apple/` was left **untracked** in this checkout (`git status` shows `??
-apple/`) — nothing was added or committed. Before committing it, decide:
-- Commit the whole generated project (simplest; standard practice for this
-  converter's output), or commit only a checked-in `project.pbxproj` +
-  Info.plists and regenerate `Resources`/`Assets.xcassets` via the converter
-  as a build step.
-- Either way, exclude `apple/**/xcuserdata/` and `apple/**/DerivedData/` (the
-  build above wrote `DerivedData` outside the repo, under
-  `~/Library/Developer/Xcode/DerivedData`, so none landed inside `apple/` in
-  this run — but Xcode.app itself may create `xcuserdata/` on first open).
+`apple/` **is tracked** as of 2026-08-07 — the whole generated project, which
+is standard practice for this converter's output. `project.pbxproj` contains
+no absolute paths, so the project works from any clone. Xcode per-user state
+(`xcuserdata/`, `*.xcuserstate`, `DerivedData/`) is gitignored.
 
 ### Requirements for real distribution
 
@@ -103,7 +101,7 @@ apple/`) — nothing was added or committed. Before committing it, decide:
   tasks for j" list (Apple enrollment decision) — nothing here unblocks that
   decision, it's a cost/distribution tradeoff only j can make.
 
-## OAuth: what works, what's blocked
+## OAuth: how sign-in works on Safari
 
 Safari has no `chrome.identity` API. The replacement is a tab-based
 Authorization Code + PKCE flow, implemented in `src/platform/safari.ts`:
@@ -115,68 +113,84 @@ cancellation/timeout). All the PKCE/state/token-exchange logic in
 `platform.launchAuthFlow(url)` and awaits a callback URL string, exactly like
 the Chrome/Firefox `chrome.identity.launchWebAuthFlow` path.
 
-**This is implemented but not wired live**, because Safari needs a stable
-`https` redirect URI we control, and none exists yet:
+**This is live** as of 2026-08-07, using a redirect page we publish from
+`site/oauth2.html` (full rationale in "Decision: Safari OAuth runs through
+GitHub Pages" below):
 
 ```ts
 // src/platform/safari.ts
-const SAFARI_OAUTH_REDIRECT_URL = ''; // TODO(j): fill in once registered
+const SAFARI_OAUTH_REDIRECT_URL = 'https://jsplitlog.github.io/arena-connections/oauth2.html';
 ```
 
-Until j supplies that URI and registers it on the Are.na OAuth application
-(see `docs/cross-browser-plan.md`, "Human tasks for j" #1):
+Alongside the OAuth button, the sidepanel also renders a token-paste form
+(`.auth-token-form` — see `src/sidepanel/sidepanel.css`) calling the
+`signInWithToken(token, remember)` export from `src/core/auth.ts` (a thin
+wrapper around the token-validation code the OAuth path already used
+internally). Both appear on Safari because `safariPlatform.offersTokenSignIn`
+is `true`; Chrome and Firefox set it `false` and show the OAuth button alone.
+The form runs entirely inside the popup page — no message round-trip to the
+background — since `chrome.storage` and `fetch` to `https://api.are.na` are
+both available directly from any extension page and already covered by the
+CSP (`connect-src https://api.are.na`).
 
-- `SAFARI_OAUTH_REDIRECT_URL` stays empty. Calling `getRedirectURL()` throws
-  a clear "not configured yet" error rather than returning an invented URL —
-  intentionally, so nothing can silently open a fake domain during sign-in.
-- `safariPlatform.supportsOAuth` stays `false`. The sidepanel
-  (`src/sidepanel/sidepanel.ts`) checks `platform.supportsOAuth` and hides
-  the "Sign in with Are.na ✶✶" button entirely on this target — it doesn't
-  render a disabled/broken button.
-- In its place, the sidepanel renders a token-paste form (new
-  `.auth-token-form` — see `src/sidepanel/sidepanel.css`) calling a new
-  `signInWithToken(token, remember)` export from `src/core/auth.ts` (a thin
-  wrapper around the existing token-validation code the OAuth path already
-  used internally). This runs entirely inside the popup page — no message
-  round-trip to the background — since `chrome.storage` and `fetch` to
-  `https://api.are.na` are both available directly from any extension page
-  and already covered by the CSP (`connect-src https://api.are.na`).
-  Users generate a personal access token at
-  https://www.are.na/settings/personal-access-tokens — this is an
-  Are.na-supported authentication method in its own right, listed alongside
-  OAuth2 in their developer docs, not a workaround.
-  (`https://dev.are.na/oauth/applications` is where OAuth *applications* are
-  created — a different thing, and the wrong link to give an end user.)
+Users generate a personal access token at
+https://www.are.na/settings/personal-access-tokens — an Are.na-supported
+authentication method in its own right, listed alongside OAuth2 in their
+developer docs, not a workaround. (`https://dev.are.na/oauth/applications`
+is where OAuth *applications* are created — a different thing, and the wrong
+link to give an end user.)
 
-## Decision: Safari OAuth is deliberately deferred (2026-08-07)
+## Decision: Safari OAuth runs through GitHub Pages (2026-08-07)
 
-Safari ships with token paste-in only. This is a considered stop, not an
-unfinished edge:
+Are.na offers **no hosted or out-of-band redirect** — no
+`urn:ietf:wg:oauth:2.0:oob`, no copy-the-code page — so a Safari OAuth flow
+needs an https callback we host. That callback is now a static, script-free
+page published by GitHub Pages from `site/oauth2.html`:
 
-- Are.na offers **no hosted or out-of-band redirect** — no
-  `urn:ietf:wg:oauth:2.0:oob`, no copy-the-code page — so there is no way to
-  complete a Safari OAuth flow without hosting an https endpoint ourselves.
-- Standing up and maintaining a permanent internet-facing redirect endpoint
-  is a poor trade against what it buys: saving Safari users a single paste of
-  a token they generate once.
-- Personal access tokens are a first-class Are.na auth method, so the Safari
-  sign-in path is legitimate rather than degraded.
+```
+https://jsplitlog.github.io/arena-connections/oauth2.html
+```
 
-On the security question, for the record: the tab-based flow would expose
-only the **authorization code** to the redirect host — never the user's
-password (they authenticate on are.na), never the access token (exchanged
-directly from the extension to `api.are.na`), and never the PKCE verifier.
-A code is single-use, short-lived, and worthless without that verifier, which
-is exactly what PKCE defends. A minimal-exposure host would be an endpoint
-returning an empty 204 with no logging, no scripts, and no external
-resources. That remains available if Safari OAuth is ever wanted; the flow
-below is written and waiting on one constant.
+**Token paste-in stays on the sign-in card alongside the OAuth button** on
+this target (`offersTokenSignIn: true` — Chrome and Firefox set it `false`).
+Safari is the only target whose sign-in depends on something outside the
+browser, so a Pages outage, a repo rename, or a revoked registration degrades
+sign-in rather than breaking it.
 
-**If that decision is revisited — once there is a redirect URI:**
-1. Set `SAFARI_OAUTH_REDIRECT_URL` in `src/platform/safari.ts`.
-2. Flip `supportsOAuth` to `true` in the same file.
-3. Rebuild — no other code changes needed; `launchAuthFlow` is already fully
-   implemented (tab open/watch/close, cancel/timeout/cleanup all handled).
+### Why this is safe
+
+Only the single-use **authorization code** ever reaches the redirect page.
+Never the user's password (they authenticate on are.na), never the access
+token (exchanged directly from the extension to `api.are.na`), and never the
+PKCE verifier. A code without that verifier is worthless — which is exactly
+what PKCE defends. The page itself loads no scripts, no fonts, and no
+external resources, and sets `referrer: no-referrer` so the code cannot leak
+via a `Referer` header. GitHub does not expose Pages access logs.
+
+### The three things that must agree
+
+Sign-in fails closed if any of these drift apart. Two live in this repo and
+are covered by `test/platform.test.ts` ("safari oauth redirect contract"):
+
+1. `SAFARI_OAUTH_REDIRECT_URL` in `src/platform/safari.ts`.
+2. `host_permissions` in `public/manifest.safari.json`. **Without host access
+   to that origin, `tabs.onUpdated` withholds `changeInfo.url`** and the
+   flow's watcher never sees the callback — the least obvious failure mode
+   here. Note `host_permissions` is replaced rather than appended by
+   `scripts/build-manifest.mjs`, so the overlay restates `api.are.na` too.
+3. The redirect URI registered on the Are.na OAuth application, space-
+   separated onto the existing Chrome and Firefox entries (see
+   `docs/firefox.md` for why a space rather than a newline).
+
+The `.html` in the path is deliberate: GitHub Pages 301-redirects a bare
+directory path to add a trailing slash, which would change `pathname` and
+fail the exact `origin + pathname` comparison in `src/core/auth.ts`.
+
+### Deploying the page
+
+`.github/workflows/pages.yml` publishes **only** `site/` — not the repo root —
+on pushes to `main` that touch it, plus `workflow_dispatch`. Enabling Pages
+(Settings → Pages → Source: GitHub Actions) is a one-time repo setting.
 
 **Known limitation:** Safari popups are ephemeral — the browser can tear one
 down if it loses focus (e.g., the user clicks elsewhere) while a request is

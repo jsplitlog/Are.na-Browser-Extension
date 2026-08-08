@@ -13,6 +13,7 @@ const sidebarAction = (): FirefoxSidebarAction =>
 // plan's portability table), so only openPanel differs from src/platform/chrome.ts.
 export const firefoxPlatform: PlatformAdapter = {
   supportsOAuth: true,
+  offersTokenSignIn: false,
   // background/service-worker.ts calls platform.openPanel(tab) directly out of
   // the action.onClicked listener, with no `await` ahead of it, so the call
   // still runs inside the click's user-activation window. Firefox enforces

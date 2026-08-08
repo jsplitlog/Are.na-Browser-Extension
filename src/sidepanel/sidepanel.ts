@@ -143,7 +143,12 @@ const renderSignIn = (errorMessage = ''): void => {
   source.append(githubIcon(), document.createTextNode('View source'));
   footer.append(remember, source);
 
-  let focusTarget: HTMLElement;
+  // Targets can offer either sign-in path or both: Safari runs OAuth through a
+  // page we host, so it keeps token paste-in alongside as a permanent fallback
+  // (see src/platform/safari.ts). Chrome and Firefox redirect through the
+  // browser itself and show the OAuth button alone.
+  const controls: HTMLElement[] = [];
+  let focusTarget: HTMLElement | undefined;
 
   if (platform.supportsOAuth) {
     const button = element('button', 'auth-primary', 'Sign in with Are.na ✶✶');
@@ -162,14 +167,19 @@ const renderSignIn = (errorMessage = ''): void => {
         renderSignIn(error instanceof Error ? error.message : 'Could not sign in with Are.na.');
       }
     });
-    card.append(copy, button, message, footer);
+    controls.push(button);
     focusTarget = button;
-  } else {
-    // This target has no interactive OAuth flow yet (see src/platform/safari.ts) —
-    // fall back to pasting a personal access token, generated at
-    // https://www.are.na/settings/personal-access-tokens.
+  }
+
+  if (platform.offersTokenSignIn) {
+    // Access tokens come from https://www.are.na/settings/personal-access-tokens —
+    // an Are.na-supported sign-in method in its own right, not a workaround.
     const form = element('form', 'auth-token-form');
-    const label = element('label', 'auth-token-label', 'Are.na access token');
+    const label = element(
+      'label',
+      'auth-token-label',
+      platform.supportsOAuth ? 'Or paste an access token' : 'Are.na access token',
+    );
     label.htmlFor = 'auth-token-input';
     const input = element('input', 'auth-token-input');
     input.id = 'auth-token-input';
@@ -178,7 +188,7 @@ const renderSignIn = (errorMessage = ''): void => {
     input.spellcheck = false;
     input.required = true;
     input.placeholder = 'Paste your access token';
-    const submit = element('button', 'auth-primary', 'Connect');
+    const submit = element('button', platform.supportsOAuth ? 'auth-secondary' : 'auth-primary', 'Connect');
     submit.type = 'submit';
     form.append(label, input, submit);
     form.addEventListener('submit', async (event) => {
@@ -198,13 +208,15 @@ const renderSignIn = (errorMessage = ''): void => {
         renderSignIn(error instanceof Error ? error.message : 'Could not sign in with Are.na.');
       }
     });
-    card.append(copy, form, message, footer);
-    focusTarget = input;
+    controls.push(form);
+    focusTarget ??= input;
   }
+
+  card.append(copy, ...controls, message, footer);
 
   view.append(card);
   replaceApp(view);
-  requestAnimationFrame(() => focusTarget.focus());
+  requestAnimationFrame(() => focusTarget?.focus());
 };
 
 const renderLookupStatus = (result: LookupResult): void => {

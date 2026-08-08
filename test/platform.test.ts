@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PlatformAdapter, PlatformTab } from '../src/platform/index';
@@ -12,6 +12,7 @@ const tab: PlatformTab = { windowId: 7, url: 'https://example.com' };
 
 const assertAdapterShape = (adapter: PlatformAdapter): void => {
   expect(typeof adapter.supportsOAuth).toBe('boolean');
+  expect(typeof adapter.offersTokenSignIn).toBe('boolean');
   expect(typeof adapter.openPanel).toBe('function');
   expect(typeof adapter.getRedirectURL).toBe('function');
   expect(typeof adapter.launchAuthFlow).toBe('function');
@@ -197,5 +198,53 @@ describe('safari adapter', () => {
     // tab-based flow lands, and to flip true once it does — either is valid, so this
     // only pins the type, not the current value.
     expect(typeof safariPlatform.supportsOAuth).toBe('boolean');
+  });
+
+  it('keeps token paste-in available, since its OAuth flow depends on a page we host', () => {
+    // Chrome and Firefox redirect through the browser itself and need no second
+    // path; Safari's redirect is a GitHub Pages URL, so an outage or a repo rename
+    // must degrade sign-in rather than break it.
+    expect(safariPlatform.offersTokenSignIn).toBe(true);
+    expect(chromePlatform.offersTokenSignIn).toBe(false);
+    expect(firefoxPlatform.offersTokenSignIn).toBe(false);
+  });
+});
+
+// The Safari redirect URL, the manifest's host_permissions, and the URI registered
+// on the Are.na OAuth application have to agree exactly, and two of the three live
+// in this repo. core/auth.ts validates the callback with an exact
+// `origin + pathname` comparison, so a drift between them fails sign-in closed.
+describe('safari oauth redirect contract', () => {
+  const redirectUrl = readFileSync(resolve(root, 'src/platform/safari.ts'), 'utf8')
+    .match(/const SAFARI_OAUTH_REDIRECT_URL = '([^']*)'/)?.[1];
+
+  it('points at an https URL with an explicit file path', () => {
+    expect(redirectUrl).toBeTruthy();
+    const url = new URL(redirectUrl as string);
+    expect(url.protocol).toBe('https:');
+    // A bare directory path would be 301'd to a trailing slash by GitHub Pages,
+    // changing `pathname` and failing core/auth.ts's exact comparison.
+    expect(url.pathname).toMatch(/\.html$/);
+    expect(url.search).toBe('');
+  });
+
+  it('is served by the page this repo publishes', () => {
+    const url = new URL(redirectUrl as string);
+    const published = resolve(root, 'site', url.pathname.split('/').pop() as string);
+    expect(existsSync(published)).toBe(true);
+  });
+
+  it('is covered by the Safari manifest host_permissions', () => {
+    const origin = new URL(redirectUrl as string).origin;
+    // host_permissions is not the `permissions` key, so scripts/build-manifest.mjs
+    // replaces rather than appends it — the overlay must restate api.are.na itself.
+    const overlay = JSON.parse(readFileSync(resolve(root, 'public/manifest.safari.json'), 'utf8')) as {
+      host_permissions?: string[];
+    };
+    const hostPermissions = overlay.host_permissions ?? [];
+    // Without host access to this origin, tabs.onUpdated withholds changeInfo.url
+    // and the flow's watcher never sees the callback.
+    expect(hostPermissions.some((pattern) => pattern.startsWith(origin))).toBe(true);
+    expect(hostPermissions).toContain('https://api.are.na/*');
   });
 });

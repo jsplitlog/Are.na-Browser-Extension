@@ -32,7 +32,8 @@
   margin: 0;
 }
 
-.auth-primary {
+.auth-primary,
+.auth-secondary {
   align-items: center;
   appearance: none;
   border-radius: 4px;
@@ -52,8 +53,18 @@
   color: var(--arena-surface);
 }
 
-.auth-primary:hover:not(:disabled) { opacity: 0.9; }
-.auth-primary:disabled { cursor: wait; opacity: 0.55; }
+/* Token paste-in sits beside the OAuth button on targets that offer both
+   (Safari), so it reads as the quieter of the two. */
+.auth-secondary {
+  background: transparent;
+  border: 1px solid var(--arena-control-border);
+  color: var(--arena-black);
+}
+
+.auth-primary:hover:not(:disabled),
+.auth-secondary:hover:not(:disabled) { opacity: 0.9; }
+.auth-primary:disabled,
+.auth-secondary:disabled { cursor: wait; opacity: 0.55; }
 
 .auth-message {
   color: var(--arena-text);

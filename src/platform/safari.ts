@@ -1,20 +1,28 @@
 import { ACTIVE_PAGE_KEY, type ActivePageRequest } from '../core/active-page';
 import type { PlatformAdapter } from './index';
 
-// WS2: Safari has neither `chrome.sidePanel` nor `chrome.identity`. The action
-// popup (manifest overlay owns `action.default_popup`) replaces the side panel
-// entirely, and the tab-based Authorization Code + PKCE flow below replaces
+// Safari has neither `chrome.sidePanel` nor `chrome.identity`. The action popup
+// (manifest overlay owns `action.default_popup`) replaces the side panel, and
+// the tab-based Authorization Code + PKCE flow below replaces
 // `chrome.identity.launchWebAuthFlow`.
 //
-// TODO(j): Safari needs a stable https redirect URI we control, registered on
-// the Are.na OAuth application (see docs/cross-browser-plan.md "Human tasks").
-// Nothing here can invent that URI safely, so it stays an empty placeholder —
-// `requireConfiguredRedirectUrl` throws a clear, actionable error rather than
-// silently opening a fake domain. Once the real URI exists:
-//   1. Set SAFARI_OAUTH_REDIRECT_URL below.
-//   2. Flip `supportsOAuth` to `true`.
-// `launchAuthFlow` is otherwise fully implemented and needs no further changes.
-const SAFARI_OAUTH_REDIRECT_URL = '';
+// Chrome and Firefox each get a redirect origin their own browser intercepts
+// (`.chromiumapp.org`, `.extensions.allizom.org`). Safari has no equivalent, so
+// the callback has to be a real https URL — this one is a static, script-free
+// page served by GitHub Pages from `site/oauth2.html`. Only the single-use
+// authorization code ever reaches it; the PKCE verifier and the access token
+// stay inside the extension (see core/auth.ts).
+//
+// Three things must stay in lockstep, or sign-in fails closed:
+//   1. This constant.
+//   2. `host_permissions` in public/manifest.safari.json — without host access
+//      to this origin, `tabs.onUpdated` withholds `changeInfo.url` and the
+//      watcher below never sees the callback.
+//   3. The redirect URI registered on the Are.na OAuth application.
+// core/auth.ts compares `origin + pathname` against this value exactly, so the
+// explicit `.html` matters: a bare directory path would be 301'd to a trailing
+// slash by Pages and fail that check.
+const SAFARI_OAUTH_REDIRECT_URL = 'https://jsplitlog.github.io/arena-connections/oauth2.html';
 
 const requireConfiguredRedirectUrl = (): string => {
   if (!SAFARI_OAUTH_REDIRECT_URL) {
@@ -86,11 +94,11 @@ const launchTabBasedAuthFlow = (authorizeUrl: string, redirectUrl: string): Prom
   });
 
 export const safariPlatform: PlatformAdapter = {
-  // Flip to true only once SAFARI_OAUTH_REDIRECT_URL above is a real,
-  // registered redirect URI. Until then the sidepanel hides the OAuth button
-  // (see src/sidepanel/sidepanel.ts) and users sign in via token paste-in
-  // (core/auth.ts signInWithToken), which does not depend on this adapter.
-  supportsOAuth: false,
+  supportsOAuth: true,
+  // Unlike Chrome and Firefox, Safari's flow depends on a page we host. Token
+  // paste-in stays on the sign-in card as a permanent fallback, so a Pages
+  // outage or a repo rename degrades sign-in rather than breaking it.
+  offersTokenSignIn: true,
   openPanel: async () => {
     // No-op: Safari opens the action popup itself; there is nothing to trigger here.
   },
